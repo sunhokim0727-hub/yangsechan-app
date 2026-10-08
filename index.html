@@ -1596,6 +1596,29 @@ document.addEventListener('keydown', e => {
   else if (e.target.id === 'nick') Actions.saveNickname();
 });
 
+/* ---- 안드로이드 하드웨어 뒤로가기: 화면 안에서 자연스럽게 뒤로 이동, 홈에서 한 번 더 누르면 종료 ---- */
+let backPressedOnce = false;
+function handleBack() {
+  if (S.reportTarget) return Actions.closeReport();
+  if (S.showQR) { S.showQR = false; return render(); }
+  if (S.showHelp) { S.showHelp = false; return render(); }
+  if (document.querySelector('.scan')) return Scanner.close();
+  if (S.screen === 'join' || S.screen === 'create') return go('home');
+  if (S.screen === 'name' && S.nickname) return go('home'); // 프로필 수정 중 취소
+  if (S.screen === 'room' && S.room && S.room.meta && S.room.meta.status === 'playing') return; // 게임 중엔 화면 안의 '나가기' 버튼으로만
+  if (S.screen === 'room') return Actions.leave();
+  if (S.screen === 'home') {
+    const CP = window.Capacitor && window.Capacitor.Plugins;
+    if (!CP || !CP.App) return;
+    if (backPressedOnce) return CP.App.exitApp();
+    backPressedOnce = true; toast('한 번 더 누르면 종료돼요');
+    setTimeout(() => { backPressedOnce = false; }, 2000);
+  }
+}
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+  window.Capacitor.Plugins.App.addListener('backButton', handleBack);
+}
+
 /* =====================================================================
    6. 시작
    ===================================================================== */
