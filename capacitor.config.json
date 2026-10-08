@@ -1,0 +1,23 @@
+{
+  "appId": "com.sunho.yangsechan",
+  "appName": "이마 제시어 게임",
+  "webDir": "www",
+  "backgroundColor": "#EEEAFF",
+  "android": {
+    "backgroundColor": "#EEEAFF",
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 500,
+      "backgroundColor": "#EEEAFF",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#EEEAFF"
+    }
+  }
+}
