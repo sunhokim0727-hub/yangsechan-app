@@ -280,6 +280,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자(0,
 const CODE_LEN = 6;
 const NICK_MAX = 10;
 const CHAT_MAX = 200;
+const LEGAL_LINKS = '<a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a> · <a href="terms.html" target="_blank" rel="noopener">이용약관</a>';
 const PUBLIC_ROOM_TTL = 3 * 60 * 60 * 1000; // (예전에 만든 방에만 적용) 3시간 지나면 목록에서 숨김
 const ROOM_OFFLINE_MS = 5 * 60 * 1000;      // 방 안에 접속 중인 사람이 아무도 없는 채로 5분이 지나면 방을 정리
 const ROOM_IDLE_MS = 10 * 60 * 1000;        // 접속 중이어도 아무도 10분간 활동하지 않으면 방을 정리
@@ -496,6 +497,14 @@ const Api = {
     return this.R(`rooms/${code}/chat`).push({ uid, nickname, text, ts: this.TS(), ...(extra || {}) });
   },
   report(code, msgId, uid) { return this.R(`rooms/${code}/reports/${msgId}/${uid}`).set(true); },
+  /* ---- 부적절한 이용자 신고 (게임 경고와 무관, 운영자 검토용) ---- */
+  reportAbuse({ reporterUid, targetUid, targetNickname, roomCode, text, reason }) {
+    return this.R('abuseReports').push({
+      reporterUid, targetUid, targetNickname: (targetNickname || '').slice(0, 20),
+      roomCode: roomCode || '', text: (text || '').slice(0, 200), reason: (reason || '기타').slice(0, 30), ts: this.TS()
+    });
+  },
+  deleteProfile(uid) { return this.R(`users/${uid}`).remove(); },
   /* 게임 시작 / 다시 하기 (방장) : 제시어를 사람마다 하나씩 배정 */
   async startGame(code, meta, players) {
     const ids = Object.keys(players);
@@ -554,7 +563,7 @@ const S = {
   form: { nickname: '', joinCode: '', chat: '', av: null,
           create: { mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: RANDOM_CATEGORY } },
   avatar: null, avCache: {}, room: null, publicRooms: [], showQR: false, showHelp: false, busy: false, pendingCode: null, leaving: false,
-  unsubRoom: null, unsubPublic: null
+  unsubRoom: null, unsubPublic: null, reportTarget: null
 };
 
 const $app = document.getElementById('app');
@@ -616,7 +625,11 @@ function viewNickname() {
   ${avPicker(S.form.av)}
   <label class="f" for="nick">이름 (최대 ${NICK_MAX}글자)</label>
   <input id="nick" data-model="nickname" maxlength="${NICK_MAX}" value="${esc(S.form.nickname)}" placeholder="예: 홍길동" autocomplete="off">
-  <div class="gap"></div><button class="btn primary block huge" data-act="saveNickname">${editing ? '저장하기' : '시작하기'}</button></div>`;
+  <div class="gap"></div><button class="btn primary block huge" data-act="saveNickname">${editing ? '저장하기' : '시작하기'}</button></div>
+  ${editing ? `<div class="card"><h2>내 데이터</h2>
+    <p class="sub">닉네임·캐릭터 정보를 서버에서 완전히 지워요. 참여 중인 방이 있다면 먼저 나가 주세요.</p>
+    <button class="btn danger block" data-act="deleteAccount">계정·데이터 삭제</button></div>` : ''}
+  <p class="sub center" style="margin-top:4px">${LEGAL_LINKS}</p>`;
 }
 function viewHome() {
   const now = Date.now();
@@ -636,7 +649,8 @@ function viewHome() {
     <div class="row wrap" style="gap:6px;margin-top:4px"><span class="badge ${r.status === 'playing' ? 'p' : 'm'}">${r.status === 'playing' ? '🎮 게임 중' : '⏳ 대기 중'}</span><span class="badge v">${esc(categoryLabel(r.category))}</span>
     <span class="badge">${r.chatMode === 'free' ? '💬 자유채팅' : '📏 일반'}</span><span class="badge g">👥 ${r.playerCount}/${r.maxPlayers}</span></div></div>
     ${r.status === 'playing' ? `<button class="btn small lemon" data-act="joinPublic" data-code="${r.code}">👀 관전</button>` : `<button class="btn small mint" data-act="joinPublic" data-code="${r.code}">입장</button>`}</div>`).join('')
-    : '<div class="empty">🕊️<br>열려 있는 공개방이 없어요.<br>직접 방을 만들어 보세요!</div>'}</div>`;
+    : '<div class="empty">🕊️<br>열려 있는 공개방이 없어요.<br>직접 방을 만들어 보세요!</div>'}</div>
+  <p class="sub center" style="margin-top:10px">${LEGAL_LINKS}</p>`;
 }
 function viewJoin() {
   return `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">방 들어가기</h2></div><div class="gap"></div>
@@ -706,14 +720,20 @@ function viewLobby() {
       ${(r.muted || {})[p.id] ? '<span class="badge p">채팅 제한</span>' : ''}
       <div class="row wrap" style="gap:6px;margin-top:4px">
       ${p.wish ? `<span class="badge">희망: ${esc(p.wish)}</span>` : ''}
-      ${online && p.id !== m.hostId ? (p.ready ? '<span class="badge m">준비 완료</span>' : '<span class="badge g">준비 전</span>') : ''}</div></div>
+      ${online && p.id !== m.hostId ? (p.ready ? '<span class="badge m">준비 완료</span>' : '<span class="badge g">준비 전</span>') : ''}
+      ${p.id !== me ? `<div class="row wrap" style="gap:6px;margin-top:4px">
+        <button class="btn small" data-act="openReport" data-uid="${p.id}" data-name="${esc(p.nickname)}">🚩 신고</button>
+        <button class="btn small" data-act="toggleBlock" data-uid="${p.id}" data-name="${esc(p.nickname)}">${isBlocked(p.id) ? '차단 해제' : '🚫 차단'}</button>
+      </div>` : ''}</div></div>
       ${isHost && p.id !== me ? `<div style="display:flex;flex-direction:column;gap:6px">
         ${online ? `<button class="btn small" data-act="toggleMute" data-uid="${p.id}">${(r.muted || {})[p.id] ? '제한 해제' : '채팅 제한'}</button>` : ''}
         <button class="btn small danger" data-act="kick" data-uid="${p.id}" data-name="${esc(p.nickname)}">강퇴</button></div>` : ''}
     </div>`).join('')}</div>
 
   ${online ? `<div class="card"><h2>채팅</h2><div class="chat" id="chatlog">
-    ${r.chat.length ? r.chat.map(c => `<div class="msg ${c.uid === me ? 'me' : ''}">${c.uid === me ? '' : `<b>${esc(c.nickname)}</b><br>`}<span class="t">${esc(c.text)}</span></div>`).join('')
+    ${r.chat.length ? r.chat.map(c => isBlocked(c.uid)
+        ? `<div class="msg sys">🚫 차단한 사용자의 메시지예요.</div>`
+        : `<div class="msg ${c.uid === me ? 'me' : ''}">${c.uid === me ? '' : `<b>${esc(c.nickname)}</b><br>`}<span class="t">${esc(c.text)}</span></div>`).join('')
       : '<div class="empty">첫 메시지를 남겨 보세요.</div>'}</div>
     <div class="row" style="margin-top:8px"><input id="chatInput" data-model="chat" maxlength="${CHAT_MAX}" value="${esc(S.form.chat)}"
       placeholder="${muted ? '방장이 채팅을 제한했어요' : '메시지 입력'}" ${muted ? 'disabled' : ''} autocomplete="off">
@@ -838,6 +858,19 @@ function viewResult() {
       : '<p class="sub center">방장이 다음 게임을 정하는 중…</p>'}
     <button class="btn small block" style="margin-top:14px" data-act="leaveGame">나가기</button>`;
 }
+
+/* =====================================================================
+   이용자 차단 / 신고 (내 기기에만 저장되는 차단 목록 + 운영자에게 전송되는 신고)
+   ===================================================================== */
+const BLOCK_KEY = 'blockedUsers';
+function getBlockList() { try { return JSON.parse(localStorage.getItem(BLOCK_KEY) || '{}'); } catch (e) { return {}; } }
+function isBlocked(uid) { return !!getBlockList()[uid]; }
+function blockUser(uid, nickname) {
+  const list = getBlockList(); list[uid] = { nickname: nickname || '', at: Date.now() };
+  localStorage.setItem(BLOCK_KEY, JSON.stringify(list));
+}
+function unblockUser(uid) { const list = getBlockList(); delete list[uid]; localStorage.setItem(BLOCK_KEY, JSON.stringify(list)); }
+const REPORT_REASONS = ['욕설·혐오 표현', '성적인 내용', '스팸·광고', '부적절한 닉네임', '기타'];
 
 /* =====================================================================
    온라인 모드 게임 (방장 폰이 진행 담당 / 방장이 나가면 다음 방장이 이어받음)
@@ -1082,13 +1115,16 @@ function updateTimer() {
 
 function gameMsg(r, c) {
   if (c.kind === 'sys') return `<div class="msg sys">${esc(c.text)}</div>`;
+  if (isBlocked(c.uid)) return `<div class="msg sys">🚫 차단한 사용자의 메시지예요.</div>`;
   const mine = c.uid === S.uid, rep = (r.reports || {})[c.id] || {}, cnt = Object.keys(rep).length;
   const tag = { q: '❓ 질문', a: '💬 답변', guess: '🎯 정답 시도' }[c.kind] || '';
   let extra = '';
   if (c.kind === 'guess') extra = c.invalid ? ' <span class="badge g">무효</span>' : c.correct === true ? ' <span class="badge m">정답!</span>' : c.correct === false ? ' <span class="badge p">오답</span>' : ' <span class="badge g">확인 중…</span>';
   const canWarn = (c.kind === 'a' || c.kind === 'free') && !mine && rosterIds(r).includes(S.uid);
   const warn = canWarn ? ` <button class="btn small" data-act="report" data-id="${c.id}" ${rep[S.uid] ? 'disabled' : ''}>⚠ 경고${cnt ? ' ' + cnt : ''}</button>` : (cnt ? ` <span class="badge p">⚠ ${cnt}</span>` : '');
-  return `<div class="msg ${mine ? 'me' : ''}"><b>${esc(c.nickname)}</b> ${tag ? `<span class="badge">${tag}</span>` : ''}${extra}<br><span class="t">${esc(c.text)}</span>${warn}</div>`;
+  const flag = !mine ? ` <button class="btn small" data-act="openReport" data-uid="${c.uid}" data-name="${esc(c.nickname)}" data-text="${esc(c.text)}">🚩</button>
+    <button class="btn small" data-act="toggleBlock" data-uid="${c.uid}" data-name="${esc(c.nickname)}">${isBlocked(c.uid) ? '차단 해제' : '🚫'}</button>` : '';
+  return `<div class="msg ${mine ? 'me' : ''}"><b>${esc(c.nickname)}</b> ${tag ? `<span class="badge">${tag}</span>` : ''}${extra}<br><span class="t">${esc(c.text)}</span>${warn}${flag}</div>`;
 }
 
 function peekActive(g) { return !!(S.peek && g && g.startedAt && Math.abs(S.peek - g.startedAt) < 3000); }
@@ -1183,6 +1219,17 @@ function viewHelp() {
     <p class="sub" style="margin:10px 0 8px">💡 다른 멤버의 제시어는 카드에 보이고, 내 것만 ❓로 가려져요. 자유채팅 방은 순서 없이 아무 때나 대화하고 정답에 도전해요. 게임 중인 공개방은 👀 관전으로 들어갈 수 있고, 정답을 맞힌 뒤에도 관전해요.</p></div>
     <div class="hf"><button class="btn primary block" data-act="closeHelp">알겠어요!</button></div></div></div>`;
 }
+function viewReport() {
+  const t = S.reportTarget;
+  return `<div class="modal" data-act="closeReport"><div class="box" data-act="noop" style="text-align:left;max-width:360px">
+    <h2>🚩 신고하기</h2>
+    <p class="sub">"${esc(t.nickname || '상대')}"님을 신고해요. 사유를 선택해 주세요.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
+      ${REPORT_REASONS.map(r => `<button class="btn" data-act="submitReport" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}
+    </div>
+    <p class="sub" style="font-size:12px">신고 내용은 운영자가 검토하며, 필요한 경우 해당 이용자를 제재할 수 있어요.</p>
+    <button class="btn block" data-act="closeReport">취소</button></div></div>`;
+}
 function viewQR() {
   return `<div class="modal" data-act="closeQR"><div class="box" data-act="noop">
     <h2>QR로 초대하기</h2><div id="qr"></div>
@@ -1218,7 +1265,7 @@ function render() {
   };
   const isNewScreen = S.screen !== S._lastScreen; S._lastScreen = S.screen;
   $app.innerHTML = '<div id="viewWrap">' + (views[S.screen] || views.boot)() + '</div>'
-    + (S.showQR && S.room ? viewQR() : '') + (S.showHelp && S.screen === 'home' ? viewHelp() : '');
+    + (S.showQR && S.room ? viewQR() : '') + (S.showHelp && S.screen === 'home' ? viewHelp() : '') + (S.reportTarget ? viewReport() : '');
   if (isNewScreen) { const vw = document.getElementById('viewWrap'); if (vw) vw.classList.add('enter'); }
 
   const nlog = document.getElementById('chatlog');
@@ -1389,6 +1436,17 @@ const Actions = {
     });
   },
   editName() { S.form.nickname = S.nickname; S.form.av = { ...(S.avatar || avatarData(S.uid)) }; go('name'); },
+  deleteAccount() {
+    if (S.room) { toast('방에 들어가 있으면 삭제할 수 없어요. 먼저 나가 주세요.'); return; }
+    if (!confirm('정말 계정과 데이터를 삭제할까요?\n닉네임, 캐릭터 설정이 모두 사라지고 되돌릴 수 없어요.')) return;
+    return run(async () => {
+      await Api.deleteProfile(S.uid);
+      localStorage.removeItem('nick'); localStorage.removeItem('lastRoom');
+      S.nickname = ''; S.avatar = null; S.form.nickname = ''; S.form.av = null;
+      toast('계정과 데이터를 삭제했어요.');
+      go('name');
+    });
+  },
   pickChar(d) { S.form.av = { ...(S.form.av || avatarData(S.uid)), e: d.e }; render(); },
   pickColor(d) { S.form.av = { ...(S.form.av || avatarData(S.uid)), c: Number(d.c) }; render(); },
   goHome() { go('home'); },
@@ -1461,6 +1519,20 @@ const Actions = {
     return run(() => Api.kick(S.room.code, d.uid, S.room.meta.visibility === 'public'));
   },
   toggleMute(d) { return Api.setMuted(S.room.code, d.uid, !(S.room.muted || {})[d.uid]).catch(e => toast(e.message)); },
+  toggleBlock(d) {
+    if (isBlocked(d.uid)) { unblockUser(d.uid); toast(`${d.name || '이용자'}님 차단을 해제했어요.`); }
+    else { blockUser(d.uid, d.name); toast(`${d.name || '이용자'}님을 차단했어요. 이제 메시지가 보이지 않아요.`); }
+    render();
+  },
+  openReport(d) { S.reportTarget = { uid: d.uid, nickname: d.name || '', roomCode: S.room ? S.room.code : '', text: d.text || '' }; render(); },
+  closeReport() { S.reportTarget = null; render(); },
+  submitReport(d) {
+    const t = S.reportTarget; if (!t) return;
+    S.reportTarget = null; render();
+    Api.reportAbuse({ reporterUid: S.uid, targetUid: t.uid, targetNickname: t.nickname, roomCode: t.roomCode, text: t.text, reason: d.reason })
+      .then(() => toast('신고가 접수됐어요. 확인 후 조치할게요.'))
+      .catch(() => toast('신고 접수에 실패했어요. 다시 시도해 주세요.'));
+  },
   sendChat() {
     const text = S.form.chat.trim(); if (!text) return;
     S.form.chat = '';
