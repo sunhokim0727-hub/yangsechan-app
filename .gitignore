@@ -9,3 +9,6 @@ android/app/release/
 *.apk
 *.aab
 .DS_Store
+android/keystore.properties
+*.keystore
+*.jks
