@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EEEAFF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<title>이마 제시어 게임</title>
+<style>
+:root{
+  --ink:#1D1642; --sub:#6b6790; --bg:#EEEAFF;
+  --violet:#6A4DFF; --pink:#FF5C93; --lemon:#FFD23F; --mint:#2DD4A7; --sky:#57B8FF;
+  --line:#1D1642;
+  --font-d:"Black Han Sans","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --font-b:"Noto Sans KR","Pretendard","Apple SD Gothic Neo",-apple-system,"Segoe UI",sans-serif;
+  --outline:-3px -3px 0 var(--ink),3px -3px 0 var(--ink),-3px 3px 0 var(--ink),3px 3px 0 var(--ink),0 -3px 0 var(--ink),0 3px 0 var(--ink),-3px 0 0 var(--ink),3px 0 0 var(--ink);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{word-break:keep-all;overflow-wrap:break-word;margin:0;color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.5;background:var(--bg)}
+body{background-color:var(--bg);background-image:radial-gradient(rgba(106,77,255,.16) 1.6px,transparent 1.7px);background-size:22px 22px}
+#app{max-width:520px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- 글자 ---------- */
+h1,h2{font-family:var(--font-d);font-weight:400;margin:0}
+h1{font-size:34px;line-height:1.1;letter-spacing:-.5px}
+h2{font-size:22px;margin-bottom:12px;letter-spacing:-.3px}
+p{margin:0 0 8px}
+.sub{color:var(--sub);font-size:14px}
+.title{color:var(--lemon);font-size:clamp(46px,15.5vw,68px);line-height:1.02;letter-spacing:-1px;text-shadow:var(--outline),0 8px 0 var(--ink)}
+.title.sm{font-size:34px;text-shadow:-2px -2px 0 var(--ink),2px -2px 0 var(--ink),-2px 2px 0 var(--ink),2px 2px 0 var(--ink),0 5px 0 var(--ink)}
+
+/* ---------- 첫 화면 ---------- */
+.hero{position:relative;padding:14px 0 6px;margin-bottom:10px}
+.hero .tag{margin:16px 0 0;font-weight:800;max-width:62%;color:var(--ink)}
+.hero-card{position:absolute;right:2px;top:8px;width:98px;height:128px;background:var(--pink);border:3px solid var(--ink);border-radius:20px;
+  transform:rotate(9deg);display:grid;place-items:center;font-family:var(--font-d);font-size:72px;color:#fff;box-shadow:5px 7px 0 var(--ink);text-shadow:var(--outline)}
+.me-chip{display:flex;align-items:center;gap:12px;background:#fff;border:2.5px solid var(--ink);border-radius:20px;padding:10px 12px;margin-bottom:14px;box-shadow:0 5px 0 var(--ink)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+.tile{font:inherit;font-family:var(--font-d);font-size:24px;border:3px solid var(--ink);border-radius:24px;padding:18px 8px 16px;cursor:pointer;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 7px 0 var(--ink);transition:transform .06s,box-shadow .06s}
+.tile{transition:transform .06s,box-shadow .06s}
+.tile:active{transform:translateY(7px) scale(.98);box-shadow:0 0 0 var(--ink)}
+.tile .ti{font-size:38px;line-height:1}
+.tile.t-create{background:var(--violet);color:#fff}
+.tile.t-join{background:var(--lemon)}
+
+/* ---------- 카드/버튼/입력 ---------- */
+.card{background:#fff;border:2.5px solid var(--ink);border-radius:22px;padding:16px;margin:0 0 16px;box-shadow:0 6px 0 var(--ink)}
+.row{display:flex;align-items:center;gap:10px}
+.row.wrap{flex-wrap:wrap}
+.row>.btn{flex:none}
+.row>.btn.grow{flex:1 1 0;min-width:max-content}
+.row>input{flex:1 1 0;min-width:0;width:auto}
+.grow{flex:1;min-width:0}
+.gap{height:12px}
+.btn{white-space:nowrap;font:inherit;font-weight:900;border:2.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:16px;padding:13px 18px;
+  box-shadow:0 4px 0 var(--ink);cursor:pointer;transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translateY(4px) scale(.98);box-shadow:0 0 0 var(--ink)}
+.btn.primary{background:var(--violet);color:#fff}
+.btn.lemon{background:var(--lemon)}
+.btn.danger{background:var(--pink);color:#fff}
+.btn.mint{background:var(--mint)}
+.btn.small{padding:7px 12px;font-size:13px;border-radius:12px;box-shadow:0 3px 0 var(--ink)}
+.btn.small:active{transform:translateY(3px) scale(.97)}
+.btn.block{display:block;width:100%}
+.btn.huge{padding:18px;font-size:22px;border-radius:20px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.tile:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+input,select{font:inherit;font-size:16px;width:100%;border:2.5px solid var(--ink);border-radius:16px;padding:12px 14px;background:#fff;color:var(--ink)}
+input::placeholder{color:#a9a5c8}
+input.code{font-family:var(--font-d);font-size:32px;letter-spacing:8px;text-align:center;text-transform:uppercase;padding:14px 8px 14px 16px}
+label.f{display:block;font-weight:900;margin:14px 0 8px}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{flex:1 1 auto;min-width:58px;font:inherit;font-weight:800;border:2.5px solid var(--ink);background:#fff;border-radius:14px;padding:10px 6px;white-space:nowrap;cursor:pointer;color:var(--ink);transition:transform .14s cubic-bezier(.22,.9,.32,1.3),box-shadow .14s}
+.seg button:active{transform:scale(.95)}
+.seg button.on{background:var(--violet);color:#fff;box-shadow:0 3px 0 var(--ink);transform:translateY(-2px)}
+.badge{display:inline-block;font-size:12px;font-weight:800;border:2px solid var(--ink);border-radius:999px;padding:1px 9px;background:#fff;white-space:nowrap;line-height:1.5}
+.badge.v{background:var(--violet);color:#fff}
+.badge.l{background:var(--lemon)}
+.badge.m{background:var(--mint)}
+.badge.p{background:var(--pink);color:#fff}
+.badge.g{background:#e6e4f2;color:var(--sub);border-color:#b9b7cf}
+.avatar{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;border:2.5px solid var(--ink);font-size:24px;line-height:1;flex:none}
+.empty{color:var(--sub);text-align:center;padding:16px 0}
+
+/* ---------- 방 코드/멤버/채팅 ---------- */
+.codebox{font-family:var(--font-d);font-size:46px;letter-spacing:10px;text-align:center;background:var(--lemon);border:3px dashed var(--ink);border-radius:20px;padding:8px 0 6px 10px;line-height:1.3}
+.player{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:2px dashed #d9d5f2}
+.player:first-of-type{border-top:0}
+.pub{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:2px dashed #d9d5f2}
+.pub:first-of-type{border-top:0}
+.chat{height:220px;overflow-y:auto;border:2.5px solid var(--ink);border-radius:18px;padding:10px;background:#F6F4FF}
+.msg{margin:0 0 9px;word-break:break-word}
+.msg b{font-size:12.5px;color:var(--sub);font-weight:800}
+.msg .t{display:inline-block;background:#fff;border:2px solid var(--ink);border-radius:5px 16px 16px 16px;padding:6px 12px;max-width:88%;text-align:left}
+.msg.me{text-align:right}
+.msg.me .t{background:var(--lemon);border-radius:16px 5px 16px 16px}
+.msg.sys{text-align:center;color:var(--sub);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:11px 18px;border-radius:999px;font-weight:800;z-index:50;max-width:90%;text-align:center;box-shadow:0 5px 0 rgba(29,22,66,.3)}
+.modal{position:fixed;inset:0;background:rgba(29,22,66,.62);display:grid;place-items:center;z-index:40;padding:20px}
+.modal .box{background:#fff;border:3px solid var(--ink);border-radius:26px;padding:20px;text-align:center;box-shadow:0 8px 0 var(--ink)}
+#qr{display:inline-block;padding:10px;background:#fff}
+.center{text-align:center}
+
+/* ---------- 게임 화면(같은 공간) : 가로 전체화면 ---------- */
+.stage{min-height:70vh;display:flex;flex-direction:column;justify-content:center;text-align:center;gap:14px;border:3px solid var(--ink);border-radius:28px;padding:22px;box-shadow:0 8px 0 var(--ink);margin-bottom:14px}
+.stage.cd{background:radial-gradient(circle at 50% 42%,#8f79ff 0%,var(--violet) 52%,#4a32d8 100%);color:#fff}
+.stage.wd{background:repeating-linear-gradient(135deg,#FFE27A 0 24px,#FFD23F 24px 48px)}
+.stage .count{font-family:var(--font-d);font-size:min(38vmin,180px);line-height:1;text-shadow:var(--outline),0 8px 0 var(--ink);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+.stage .msg{font-family:var(--font-d);font-size:24px;line-height:1.3}
+.stage .cat{align-self:center;background:var(--ink);color:#fff;border-radius:999px;padding:4px 18px;font-weight:800}
+.stage .word{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font-d);font-weight:400;line-height:1.2;color:var(--ink)}
+.stage .word span{display:inline-block;max-width:100%;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:.12em .4em;box-shadow:0 6px 0 var(--ink);word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
+.rot{position:fixed;inset:0;z-index:30;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.rot .stage{flex:1;min-height:0;margin:0;padding:14px;gap:8px;overflow:hidden}
+.rot .stage .msg{font-size:min(6vmin,24px)}
+.rot .stage .count{font-size:min(30vmin,150px)}
+@media (orientation:portrait){
+  .rot{inset:auto;top:0;left:0;width:100vh;height:100vw;width:100dvh;height:100dvw;transform-origin:top left}
+  html[data-home="right"] .rot{transform:translateX(100vw) rotate(90deg);transform:translateX(100dvw) rotate(90deg)}
+  html[data-home="left"] .rot{transform:translateY(100vh) rotate(-90deg);transform:translateY(100dvh) rotate(-90deg)}
+}
+
+/* ---------- 온라인 게임 화면 ---------- */
+html[data-role="ask"],html[data-role="ask"] body{background:#FFE27A}
+html[data-role="answer"],html[data-role="answer"] body{background:#A8F0DC}
+html[data-role="wait"],html[data-role="wait"] body{background:#DCDCE8}
+html[data-role="watch"],html[data-role="watch"] body{background:#D6ECFF}
+.banner{background:#fff;border:2.5px solid var(--ink);border-radius:18px;padding:12px 14px;font-weight:900;margin:2px 0 12px;box-shadow:0 5px 0 var(--ink)}
+.timerbar{display:flex;align-items:center;gap:10px;margin:12px 0 0}
+.tlabel{font-weight:900;font-size:13px;white-space:nowrap}
+.tbar{flex:1;height:16px;border:2.5px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--mint);transition:width .25s linear}
+.tbar i.low{background:var(--pink)}
+.tnum{font-family:var(--font-d);font-size:20px;min-width:66px;text-align:right}
+.strip{display:flex;gap:10px;overflow-x:auto;padding:16px 2px 12px}
+.pc{position:relative;flex:none;min-width:108px;max-width:150px;background:#fff;border:2.5px solid var(--ink);border-radius:18px;padding:10px 8px;text-align:center;box-shadow:0 4px 0 var(--ink)}
+.pc.q{background:var(--lemon)}
+.pc.gone{opacity:.5}
+/* 내 카드: 항상 맨 왼쪽에 고정(옆으로 넘겨도 안 사라짐) + 보라색으로 확실히 구분 */
+.pc.me{position:sticky;left:2px;z-index:3;background:var(--violet);color:#fff;border-width:3px;margin-right:6px;box-shadow:0 4px 0 var(--ink),9px 0 10px -6px rgba(29,22,66,.5)}
+.pc.me .nm{color:#fff}
+.pc.me .wr{color:var(--lemon)}
+.pc.me .stt{color:#fff}
+.pc.me .wd{background:#fff;color:var(--ink)}
+.pc .ribbon{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--lemon);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:0 14px;font-family:var(--font-d);font-size:13px;line-height:1.55;white-space:nowrap}
+.pc .nm{font-weight:900;font-size:14px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .wd{display:inline-block;background:#F1EEFF;border:2px solid var(--ink);border-radius:10px;padding:1px 8px;font-weight:900;margin:6px 0 4px;word-break:keep-all;overflow-wrap:anywhere;font-size:14px}
+.pc .wr{font-size:12px;font-weight:800;color:var(--pink)}
+.pc .stt{font-size:12px;font-weight:800;color:var(--sub)}
+.chat.g{height:34vh;min-height:180px}
+
+/* ---------- 결과 화면 ---------- */
+.rank{font-family:var(--font-d);font-size:20px;min-width:74px}
+.rank.last{color:var(--pink)}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin:14px 0 20px;border-bottom:3px solid var(--ink)}
+.pod{flex:1;max-width:116px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
+.pod.none{visibility:hidden}
+.pod .avatar{width:58px;height:58px;font-size:32px}
+.pod .pn{font-weight:900;font-size:14px;word-break:keep-all;margin-top:4px}
+.pod .pw{font-size:12px;color:var(--sub);min-height:1.3em;word-break:keep-all}
+.pod .bar{width:100%;border:2.5px solid var(--ink);border-bottom:0;border-radius:16px 16px 0 0;display:grid;place-items:start center;padding-top:6px;font-size:30px;margin-top:6px}
+.p1 .bar{height:126px;background:var(--lemon);animation:barGrow .5s .1s cubic-bezier(.22,.9,.32,1.15) both}
+.p2 .bar{height:92px;background:#DDE5FF;animation:barGrow .5s .22s cubic-bezier(.22,.9,.32,1.15) both}
+.p3 .bar{height:66px;background:#FFD9B8;animation:barGrow .5s .34s cubic-bezier(.22,.9,.32,1.15) both}
+@keyframes barGrow{0%{transform:scaleY(0);opacity:0}100%{transform:scaleY(1);opacity:1}}
+.pod .bar{transform-origin:bottom}
+@media (prefers-reduced-motion:reduce){.p1 .bar,.p2 .bar,.p3 .bar{animation:none}}
+.player.loser{background:#FFF0F5;border:2px dashed var(--pink);border-radius:16px;padding:10px 12px;margin-top:10px}
+.mecard{display:flex;align-items:center;gap:14px;background:var(--violet);color:#fff;border:3px solid var(--ink);border-radius:22px;padding:12px 16px;margin:0 0 16px;box-shadow:0 6px 0 var(--ink)}
+.mecard .avatar{width:64px;height:64px;font-size:36px}
+.mecard .mr{font-family:var(--font-d);font-size:36px;line-height:1.1;color:var(--lemon)}
+.mecard .sub{color:#E3DBFF}
+.player.me{background:var(--violet);color:#fff;border:3px solid var(--ink);border-radius:18px;padding:10px 12px;margin:6px 0;box-shadow:0 4px 0 var(--ink)}
+.player.me .sub{color:#E3DBFF}
+.player.me .rank{color:var(--lemon)}
+.pod.me .avatar{box-shadow:0 0 0 4px var(--violet),0 0 0 7px var(--ink)}
+.pod.me .pn{color:var(--violet)}
+.confetti{position:fixed;top:-16px;width:10px;height:15px;z-index:60;pointer-events:none;animation:fall 2.8s linear forwards}
+@keyframes fall{to{transform:translate3d(var(--dx),112vh,0) rotate(var(--rot))}}
+.newmem{background:#E3F4FF;border:2.5px solid var(--ink);border-radius:18px;padding:12px 14px;margin:0 0 14px;box-shadow:0 4px 0 var(--ink);font-weight:800}
+.newmem .sub{font-weight:500;margin-top:4px}
+.avpick{margin:6px 0 4px}
+.avprev{display:flex;justify-content:center;margin:2px 0 14px}
+.avprev .avatar{width:96px;height:96px;font-size:56px;border-width:3px;box-shadow:0 5px 0 var(--ink)}
+.avgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:8px;max-height:224px;overflow-y:auto;padding:8px;border:2.5px solid var(--ink);border-radius:18px;background:#F6F4FF}
+.avgrid button{aspect-ratio:1;font-size:26px;line-height:1;border:2.5px solid transparent;border-radius:14px;background:#fff;cursor:pointer;padding:0;font-family:inherit}
+.avgrid button.on{border-color:var(--ink);background:var(--lemon);box-shadow:0 3px 0 var(--ink)}
+.avcolors{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;justify-items:center;margin:14px 4px 0}
+.avcolors button{width:100%;max-width:34px;aspect-ratio:1;border-radius:50%;border:2.5px solid var(--ink);cursor:pointer;padding:0}
+.avcolors button.on{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--ink)}
+@keyframes pop{0%{transform:scale(1.7);opacity:0}100%{transform:scale(1);opacity:1}}
+/* ---------- 화면 전환 / 모달 / 토스트 애니메이션 ---------- */
+@keyframes viewIn{0%{opacity:0;transform:translateY(16px) scale(.985)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes modalIn{0%{opacity:0;transform:scale(.88) translateY(12px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,14px) scale(.96)}100%{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes tileInStagger{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+#viewWrap{animation:none}
+#viewWrap.enter{animation:viewIn .32s cubic-bezier(.22,.9,.32,1.15) both}
+.modal{animation:fadeIn .18s ease both}
+.modal .box{animation:modalIn .26s cubic-bezier(.22,.9,.32,1.15) both}
+.toast{animation:toastIn .28s cubic-bezier(.22,.9,.32,1.15) both}
+#viewWrap.enter .tiles .tile{animation:tileInStagger .34s cubic-bezier(.22,.9,.32,1.15) both}
+#viewWrap.enter .tiles .tile:nth-child(2){animation-delay:.05s}
+.scan video{animation:fadeIn .25s ease both}
+/* ---------- 부팅/로딩 화면 ---------- */
+.boot{min-height:72vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
+.boot-card{width:108px;height:138px;background:var(--pink);border:3px solid var(--ink);border-radius:22px;display:grid;place-items:center;font-size:62px;
+  box-shadow:6px 8px 0 var(--ink);animation:bootFloat 1.6s ease-in-out infinite}
+@keyframes bootFloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+.boot-dots{display:flex;gap:8px}
+.boot-dots i{width:11px;height:11px;border-radius:50%;background:var(--violet);border:2px solid var(--ink);animation:bootDot 1s ease-in-out infinite}
+.boot-dots i:nth-child(2){animation-delay:.15s;background:var(--lemon)}
+.boot-dots i:nth-child(3){animation-delay:.3s;background:var(--mint)}
+@keyframes bootDot{0%,80%,100%{transform:translateY(0);opacity:.5}40%{transform:translateY(-7px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.boot-card,.boot-dots i{animation:none}}
+.or{display:flex;align-items:center;gap:10px;color:var(--sub);font-weight:800;font-size:13px;margin:18px 0 0}
+.or::before,.or::after{content:'';flex:1;border-top:2px dashed #cfc9ee}
+.scan{position:fixed;inset:0;z-index:80;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:12px;overflow:hidden;
+  padding:16px 16px calc(22px + env(safe-area-inset-bottom,0px))}
+.scan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.scan-frame{position:absolute;left:50%;top:42%;width:min(70vw,300px);aspect-ratio:1;transform:translate(-50%,-50%);border:4px solid var(--lemon);border-radius:26px;box-shadow:0 0 0 100vmax rgba(0,0,0,.58);z-index:1}
+.scan-msg{position:relative;z-index:2;color:#fff;font-weight:800;text-align:center;background:rgba(0,0,0,.5);padding:8px 16px;border-radius:999px}
+.scan .btn{position:relative;z-index:2;width:100%;max-width:320px}
+.help-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font:inherit;font-weight:900;color:var(--ink);background:rgba(255,255,255,.72);border:2.5px dashed var(--ink);border-radius:18px;padding:12px;margin:-8px 0 22px;cursor:pointer}
+.help-btn:active{background:#fff}
+.help-btn:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.modal .box.help{text-align:left;width:100%;max-width:440px;max-height:86vh;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.help .hb{overflow-y:auto;padding:18px 18px 6px}
+.help .hf{padding:10px 18px 18px;border-top:2px dashed #d9d5f2}
+.help h2{margin-bottom:8px}
+.help h3{font-family:var(--font-d);font-weight:400;font-size:18px;margin:16px 0 6px}
+.help ol{margin:0;padding-left:22px}
+.help li{margin-bottom:5px}
+.help .goal{background:var(--lemon);border:2.5px solid var(--ink);border-radius:14px;padding:9px 12px;font-weight:800}
+@media (prefers-reduced-motion:reduce){.btn,.tile,.seg button{transition:none}.stage .count{animation:none}.confetti{display:none}#viewWrap.enter,#viewWrap.enter .tiles .tile,.modal,.modal .box,.toast,.scan video{animation:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast" style="display:none"></div>
+<script>
+/* =====================================================================
+   0. 설정 : Firebase 콘솔에서 복사한 값을 아래에 붙여 넣으세요
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAjCWrcKiBwgJBDoH9LmaOo_OFwiBJjK7M",
+  authDomain: "heads-up-game-ca0f8.firebaseapp.com",
+  // Realtime Database를 싱가포르(asia-southeast1)로 만들었다는 가정의 주소예요.
+  // 데이터베이스 화면 맨 위 주소와 다르면 이 줄을 그 주소로 바꿔 주세요.
+  databaseURL: "https://heads-up-game-ca0f8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "heads-up-game-ca0f8",
+  appId: "1:144608639273:web:83ea7d568656eb70849f38"
+};
+
+/* =====================================================================
+   1. 게임 데이터 (화면과 무관한 상수)  - 나중에 React로 옮길 때 그대로 재사용
+   ===================================================================== */
+const CATEGORY_GROUPS = [
+  { group: '사람', items: ['연예인', '가수', '배우', '아이돌', '운동선수', '유튜버', '역사 인물'] },
+  { group: '작품', items: ['영화 제목', '드라마 제목', '애니메이션 제목', '애니메이션 캐릭터', '웹툰', '게임 캐릭터'] },
+  { group: '일상', items: ['동물', '음식', '과일·채소', '직업', '나라·도시', '물건'] },
+  { group: '기타', items: ['속담·사자성어', '예능 프로그램', '브랜드'] }
+];
+const RANDOM_CATEGORY = 'random';
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자(0,O,1,I) 제외
+const CODE_LEN = 6;
+const NICK_MAX = 10;
+const CHAT_MAX = 200;
+const LEGAL_LINKS = '<a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a> · <a href="terms.html" target="_blank" rel="noopener">이용약관</a>';
+const PUBLIC_ROOM_TTL = 3 * 60 * 60 * 1000; // (예전에 만든 방에만 적용) 3시간 지나면 목록에서 숨김
+const ROOM_OFFLINE_MS = 5 * 60 * 1000;      // 방 안에 접속 중인 사람이 아무도 없는 채로 5분이 지나면 방을 정리
+const ROOM_IDLE_MS = 10 * 60 * 1000;        // 접속 중이어도 아무도 10분간 활동하지 않으면 방을 정리
+
+function genCode() {
+  let s = '';
+  for (let i = 0; i < CODE_LEN; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  return s;
+}
+function categoryLabel(c) { return (!c || c === RANDOM_CATEGORY) ? '랜덤(전체)' : c; }
+function limitLabel(sec) { return sec ? (sec / 60) + '분' : '무제한'; }
+function newPlayer(nickname) {
+  return { nickname, avatar: S.avatar || null, ready: false, wish: '', online: true, joinedAt: firebase.database.ServerValue.TIMESTAMP };
+}
+
+const COUNTDOWN_SEC = 5; // 게임 시작 전 카운트다운(초)
+// 가로 화면 기본 방향: 화면을 '보는 사람' 기준으로 홈 버튼(폰 아래쪽)이 어느 쪽에 오는지 ('left' 또는 'right')
+// 방향이 반대로 보이면 이 값만 바꾸면 됩니다.
+const LANDSCAPE_HOME_SIDE = 'left';
+document.documentElement.dataset.home = LANDSCAPE_HOME_SIDE;
+
+// 카테고리별 제시어 (여기에 계속 추가하면 됩니다)
+const WORDS = {
+  '연예인': ['유재석','강호동','신동엽','이경규','박명수','전현무','김구라','이수근','서장훈','하하','지석진','김종국','송지효','양세찬','전소민','이광수','김희철','장도연','박나래','안영미','이영자','송은이','김숙','조세호','양세형','문세윤','홍진경','정형돈','노홍철','정준하','데프콘','유세윤','장동민','김준호','김대희','유민상','신봉선','박수홍','김용만','김병만','남희석','최양락','팽현숙','이경실','김지민','김준현','안정환','이동국','강남','사유리','홍현희','박미선','김원희','백종원','이연복','최현석','김성주','김제동','박경림','이소라','한혜진','송해','이덕화','이순재','신구','나문희','김영옥','유병재','김영철','김신영','조혜련','이국주','김국진','허경환','전유성','붐','이특','은지원','김희선','이승윤','장성규','남창희','이용진','박성광','이수지','이은지','신기루','김호영','이상민'],
+  '가수': ['아이유','임영웅','싸이','박효신','성시경','태연','김범수','이승기','조용필','나훈아','비','이효리','백지영','윤하','볼빨간사춘기','10cm','악뮤','폴킴','장범준','이문세','김건모','서태지','이적','화사','박진영','지드래곤','태양','이선희','김광석','김연우','나얼','윤종신','신승훈','김동률','이승철','박정현','백예린','헤이즈','자이언티','크러쉬','딘','지코','박재범','제시','이하이','청하','선미','소유','거미','린','알리','홍진영','장윤정','송가인','임재범','김종서','이수영','채연','보아','바다','다이나믹 듀오','에픽하이','타블로','비와이','버스커버스커','잔나비','혁오','새소년','검정치마','이무진','케이윌','에일리','정승환','이석훈','소찬휘','엄정화','이정현','주현미','인순이','패티김','남진','설운도','태진아','변진섭','김현정','임창정','김윤아','자우림','넬','SG워너비','다비치','카더가든','조성모','god','이소라'],
+  '배우': ['송강호','이병헌','전지현','김혜수','마동석','하정우','황정민','공유','박서준','손예진','현빈','송혜교','조인성','김수현','이정재','정우성','유해진','박보검','수지','김태리','전도연','최민식','이제훈','박은빈','남주혁','한소희','변우석','이민호','배두나','류승룡','김윤석','설경구','조정석','정해인','서인국','이종석','이도현','김선호','박형식','박신혜','김고은','전여빈','문근영','한지민','김하늘','고현정','김희애','이영애','김남주','신민아','임수정','김소현','박민영','이보영','이세영','김유정','서현진','공효진','박보영','임윤아','정려원','하지원','한효주','차승원','김래원','지성','소지섭','강동원','원빈','장동건','고수','주지훈','이서진','성동일','김상중','오정세','라미란','염정아','김서형','서지혜','박해일','조승우','류준열','안재홍','박정민','최우식','송중기','김지원','유연석','이동욱','이상윤','신혜선','이나영','손석구','백윤식','안성기','박중훈','윤여정','이정은','배종옥','김명민','이준기','이준호','차은우','서강준','김재욱','아이유'],
+  '아이돌': ['방탄소년단','블랙핑크','뉴진스','트와이스','세븐틴','엑소','빅뱅','소녀시대','레드벨벳','에스파','아이브','르세라핌','스트레이 키즈','있지','샤이니','동방신기','슈퍼주니어','2NE1','원더걸스','카라','god','H.O.T.','지민','뷔','제니','지수','민지','카리나','윈터','장원영','위너','아이콘','트레저','엔하이픈','투모로우바이투게더','몬스타엑스','갓세븐','엔시티','에이티즈','여자친구','마마무','오마이걸','러블리즈','에이핑크','프로미스나인','우주소녀','아이들','스테이씨','엔믹스','케플러','비투비','인피니트','하이라이트','2PM','FT아일랜드','씨엔블루','티아라','포미닛','시크릿','씨스타','젝스키스','핑클','S.E.S.','베이비복스','신화','태민','온유','키','백현','카이','수호','찬열','세훈','정국','슈가','RM','진','제이홉','리사','로제','하니','다니엘','해린','혜인','카즈하','안유진','리즈','나연','정연','모모','사나','지효','미나','다현','채영','쯔위','슬기','아이린','조이','예리','웬디','라이즈','아일릿','제로베이스원','보이넥스트도어','투어스','베이비몬스터'],
+  '운동선수': ['손흥민','김연아','박지성','류현진','박찬호','이강인','김민재','박세리','박태환','추신수','이승엽','안세영','김하성','황희찬','차범근','홍명보','이영표','기성용','손기정','이상화','최민정','우상혁','이대호','오승환','메시','호날두','마이클 조던','르브론 제임스','우사인 볼트','이승우','조현우','김영권','조규성','이천수','박주영','황선홍','이정후','김광현','양현종','오타니 쇼헤이','이종범','선동열','최동원','박병호','최정','김현수','강백호','김연경','허재','하승진','김주성','최경주','박인비','고진영','유소연','김시우','임성재','타이거 우즈','차민규','황대헌','황선우','김우민','이대훈','김수녕','안산','김제덕','김우진','손연재','양학선','진종오','박상영','신유빈','유승민','이봉주','황영조','페이커','윤성빈','네이마르','음바페','홀란드','마라도나','펠레','지단','베컴','해리 케인','모하메드 살라','스테판 커리','코비 브라이언트','마이크 타이슨','무하마드 알리','로저 페더러','라파엘 나달','노바크 조코비치','세리나 윌리엄스','마이클 펠프스','탐 브래디'],
+  '유튜버': ['침착맨','쯔양','곽튜브','빠니보틀','슈카월드','대도서관','풍자','김계란','충주맨','피식대학','워크맨','흔한남매','보람튜브','승우아빠','밴쯔','엠뚜루마뚜루','총몇명','랄랄','하이몬','과나','도티','잠뜰','김블루','허팝','진용진','미미미누','박막례 할머니','영국남자','조나단','올리버쌤','한문철','신사임당','오킹','장삐쭈','문복희','히밥','햄지','떵개떵','입짧은햇님','이사배','씬님','레나','감스트','우왁굳','풍월량','소련여자','보겸','꽈뚜룹','테스터훈'],
+  '역사 인물': ['세종대왕','이순신','신사임당','유관순','안중근','김구','광개토대왕','을지문덕','장영실','정약용','허준','강감찬','연개소문','왕건','이성계','흥선대원군','명성황후','김유신','주몽','선덕여왕','안창호','윤봉길','허난설헌','김정희','이황','이이','서희','최영','단군','정조','이방원','나폴레옹','장보고','원효','최치원','정몽주','정도전','연산군','광해군','영조','고종','김옥균','전봉준','홍범도','김좌진','이봉창','신채호','박은식','이회영','근초고왕','진흥왕','장수왕','의자왕','계백','온달','평강공주','대조영','궁예','견훤','김춘추','권율','곽재우','김시민','논개','사명대사','황희','맹사성','한명회','조광조','김홍도','신윤복','정선','박지원','박제가','김만덕','허균','김삿갓','안용복','이사부','칭기즈 칸','알렉산더 대왕','카이사르','클레오파트라','에이브러햄 링컨','조지 워싱턴','아인슈타인','아이작 뉴턴','갈릴레오','레오나르도 다빈치','셰익스피어','베토벤','모차르트','마리 퀴리','간디','마틴 루서 킹','넬슨 만델라','윈스턴 처칠','공자','소크라테스','플라톤','아리스토텔레스','콜럼버스','잔 다르크','마리 앙투아네트','유비','관우','장비','조조','제갈량'],
+  '영화 제목': ['기생충','부산행','명량','극한직업','신과함께','올드보이','괴물','범죄도시','도둑들','암살','베테랑','국제시장','태극기 휘날리며','타이타닉','어벤져스','겨울왕국','라이온킹','인터스텔라','해리 포터','아바타','인셉션','토이 스토리','쥬라기 공원','반지의 제왕','매트릭스','어바웃 타임','알라딘','조커','엽기적인 그녀','건축학개론','친구','왕의 남자','7번방의 선물','살인의 추억','아저씨','관상','변호인','택시운전사','1987','서울의 봄','한산','노량','내부자들','아가씨','곡성','파묘','밀정','검사외전','광해, 왕이 된 남자','최종병기 활','추격자','황해','마더','박쥐','써니','말죽거리 잔혹사','웰컴 투 동막골','실미도','쉬리','공동경비구역 JSA','클래식','내 머리 속의 지우개','접속','8월의 크리스마스','미녀는 괴로워','과속스캔들','럭키','수상한 그녀','엑시트','신세계','아수라','부당거래','베를린','도가니','완벽한 타인','미나리','헤어질 결심','리틀 포레스트','국가부도의 날','남산의 부장들','사도','헌트','범죄도시2','모가디슈','교섭','스파이더맨','배트맨','아이언맨','캡틴 아메리카','토르','블랙 팬서','닥터 스트레인지','아쿠아맨','원더우먼','슈퍼맨','스타워즈','터미네이터','에이리언','백 투 더 퓨처','E.T.','죠스','인디아나 존스','다이 하드','매드맥스','미션 임파서블','분노의 질주','트랜스포머','캐리비안의 해적','나 홀로 집에','포레스트 검프','쇼생크 탈출','라라랜드','위대한 쇼맨','인사이드 아웃','코코','업','월-E','니모를 찾아서','몬스터 주식회사','라따뚜이','주토피아','모아나','미녀와 야수','신데렐라','라푼젤','뮬란','인어공주','백설공주','엔칸토','소울','파이트 클럽','다크 나이트','오펜하이머','바비','탑건','트루먼 쇼','그린 마일','글래디에이터'],
+  '드라마 제목': ['오징어 게임','겨울연가','대장금','별에서 온 그대','도깨비','사랑의 불시착','태양의 후예','응답하라 1988','미생','이태원 클라쓰','스카이 캐슬','더 글로리','슬기로운 의사생활','눈물의 여왕','재벌집 막내아들','김비서가 왜 그럴까','상속자들','꽃보다 남자','성균관 스캔들','시크릿 가든','커피프린스 1호점','풀하우스','나의 아저씨','빈센조','무빙','이상한 변호사 우영우','동백꽃 필 무렵','미스터 션샤인','펜트하우스','나의 해방일지','시그널','응답하라 1997','응답하라 1994','태왕사신기','주몽','허준','이산','동이','선덕여왕','추노','아이리스','내 이름은 김삼순','파리의 연인','넝쿨째 굴러온 당신','주군의 태양','그 겨울, 바람이 분다','피노키오','너의 목소리가 들려','킬미, 힐미','밀회','비밀의 숲','푸른 바다의 전설','구르미 그린 달빛','W','그녀는 예뻤다','부부의 세계','아는 와이프','거침없이 하이킥','지붕 뚫고 하이킥','순풍산부인과','안녕 프란체스카','가을동화','여름향기','봄의 왈츠','내조의 여왕','야인시대','모래시계','엄마가 뿔났다','전원일기','미안하다 사랑한다','발리에서 생긴 일','스토브리그','이번 생은 처음이라','호텔 델루나','사이코지만 괜찮아','스물다섯 스물하나','수리남','지옥','킹덤','D.P.','마이 네임','소년심판','지금 우리 학교는','모범택시','악의 꽃','슬기로운 감빵생활','쌈, 마이웨이','김과장','육룡이 나르샤','뿌리깊은 나무','옷소매 붉은 끝동','정년이','폭싹 속았수다','왕좌의 게임','브레이킹 배드','프렌즈','기묘한 이야기','종이의 집'],
+  '애니메이션 제목': ['원피스','나루토','드래곤볼','슬램덩크','짱구는 못말려','포켓몬스터','명탐정 코난','센과 치히로의 행방불명','이웃집 토토로','하울의 움직이는 성','귀멸의 칼날','진격의 거인','주술회전','은혼','헌터x헌터','블리치','데스노트','강철의 연금술사','에반게리온','세일러문','도라에몽','스폰지밥','검정고무신','뽀로로','톰과 제리','심슨 가족','이누야샤','아기공룡 둘리','나의 히어로 아카데미아','하이큐!!','쿠로코의 농구','스파이 패밀리','체인소 맨','카우보이 비밥','장송의 프리렌','소드 아트 온라인','원펀맨','베르세르크','블랙 클로버','페어리 테일','일곱 개의 대죄','5등분의 신부','너의 이름은','날씨의 아이','초속 5센티미터','스즈메의 문단속','모노노케 히메','마녀 배달부 키키','천공의 성 라퓨타','바람계곡의 나우시카','벼랑 위의 포뇨','붉은 돼지','바람이 분다','반딧불이의 묘','시간을 달리는 소녀','늑대아이','썸머 워즈','라바','로보카 폴리','꼬마버스 타요','또봇','헬로카봇','신비아파트','캐치! 티니핑','시크릿 쥬쥬','핑크퐁','아기상어','브레드이발소','엉덩이 탐정','달려라 하니','머털도사','독수리 오형제','마징가 Z','로보트 태권V','개구리 중사 케로로','날아라 슈퍼보드','벅스 바니','패밀리 가이','사우스 파크','아바타: 아앙의 전설','어드벤처 타임','스누피','디지몬 어드벤처','유희왕','베이블레이드','요괴워치','카드캡터 사쿠라','축구왕 슛돌이','마법천자문','이니셜 D','시티헌터','북두의 권'],
+  '애니메이션 캐릭터': ['루피','나루토','손오공','피카츄','짱구','도라에몽','뽀로로','엘사','심바','미키마우스','스폰지밥','톰','제리','토토로','가오나시','코난','버즈 라이트이어','우디','니모','마이크 와조스키','둘리','뿌까','슈렉','미니언즈','곰돌이 푸','벨','자스민','포뇨','쵸파','조로','도널드 덕','구피','티거','피글렛','라이트닝 맥퀸','메이터','도리','스티치','올라프','안나','라푼젤','백설공주','신데렐라','피터팬','팅커벨','덤보','알라딘','지니','타잔','포카혼타스','에리얼','세바스찬','쿵푸팬더 포','알렉스','피오나 공주','장화 신은 고양이','벅스 바니','대피 덕','트위티','핑크 팬더','찰리 브라운','스머프','베지터','프리저','손오반','크리링','상디','나미','우솝','에이스','사스케','카카시','히나타','이타치','에렌 예거','미카사','리바이','탄지로','네즈코','젠이츠','이노스케','고죠 사토루','이타도리 유지','곤','키르아','이치고','야가미 라이토','엘','에드워드 엘릭','신지','아야나미 레이','사이타마','아냐','로이드 포저','요르','노진구','이슬이','퉁퉁이','비실이','철수','유리','맹구','훈이','봉미선','신형만','흰둥이','란','하이바라 아이','김전일','세일러문','이상해씨','파이리','꼬부기','잠만보','뮤츠','리자몽','지우'],
+  '웹툰': ['신의 탑','갓 오브 하이스쿨','유미의 세포들','이태원 클라쓰','스위트홈','미생','송곳','무빙','치즈인더트랩','마음의 소리','놓지마 정신줄','노블레스','덴마','여신강림','나 혼자만 레벨업','전지적 독자 시점','외모지상주의','쌉니다 천리마마트','나빌레라','기안84의 복학왕','호랑이형님','윌유','대학일기','연애혁명','이끼','타짜','식객','패션왕','뷰티풀 군바리','열혈강호','용비불패','조의 영역','이말년씨리즈','닥터 프로스트','삼봉이발소','낢이 사는 이야기','내 ID는 강남미인','사내맞선','가우스전자','기기괴괴','헬퍼','프리드로우','약한영웅','싸움독학','고수','오늘부터 우리는','재벌집 막내아들','지금 우리 학교는'],
+  '게임 캐릭터': ['마리오','루이지','링크','소닉','팩맨','커비','티모','아리','야스오','럭스','트레이서','디바','겐지','메르시','주황버섯','배찌','디지니','다오','크리퍼','스티브','쿠파','요시','저글링','질럿','피치 공주','동키콩','리 신','도라에몽','갱플랭크','블리츠크랭크','가렌','다리우스','진','징크스','애쉬','이즈리얼','베인','케이틀린','룰루','마스터 이','레오나','나미','쓰레쉬','위도우메이커','라인하르트','솔저: 76','한조','메이','정크랫','로드호그','아나','젠야타','루시우','파라','와리오','키노피오','젤다 공주','가논돌프','테일즈','너클즈','류','켄','춘리','가일','카즈야','헤이하치','엔더맨','슬라임','핑크빈','자쿰','마리드','우니','케피','종려','감우','호두','나히다','클라우드','티파','세피로스','너굴','여울','록맨'],
+  '동물': ['사자','호랑이','코끼리','기린','펭귄','고래','상어','돌고래','판다','코알라','캥거루','하마','악어','늑대','여우','토끼','다람쥐','고슴도치','수달','카멜레온','앵무새','독수리','부엉이','문어','해파리','낙타','얼룩말','미어캣','나무늘보','고릴라','하이에나','치타','표범','재규어','퓨마','곰','북극곰','반달가슴곰','회색곰','순록','사슴','노루','멧돼지','고라니','오소리','너구리','족제비','스컹크','라쿤','원숭이','침팬지','오랑우탄','맨드릴','개코원숭이','라마','알파카','양','염소','소','황소','돼지','말','조랑말','당나귀','닭','오리','거위','칠면조','공작','타조','에뮤','홍학','두루미','백조','갈매기','펠리컨','앨버트로스','참새','제비','까치','까마귀','비둘기','올빼미','딱따구리','벌새','매','수리','바다표범','물개','바다사자','해마','바다코끼리','범고래','흰수염고래','혹등고래','대왕오징어','오징어','낙지','꽃게','가재','새우','랍스터','거북이','바다거북','도마뱀','이구아나','뱀','코브라','비단뱀','아나콘다','개구리','두꺼비','도롱뇽','금붕어','잉어','연어','참치','복어','흰동가리','가오리','곰치','전갈','거미','타란툴라','개미','벌','나비','잠자리','사마귀','장수풍뎅이','사슴벌레','매미','반딧불이','무당벌레','지렁이','달팽이','쥐','햄스터','기니피그','고양이','강아지','코뿔소','들소','무스','영양','가젤','누','쿼카','웜뱃','오리너구리','아르마딜로','개미핥기','천산갑','레서판다','여우원숭이','카피바라','비버','청설모','박쥐','두더지'],
+  '음식': ['김치찌개','떡볶이','비빔밥','삼겹살','치킨','피자','햄버거','라면','짜장면','짬뽕','탕수육','냉면','불고기','김밥','순두부찌개','초밥','파스타','스테이크','마라탕','곱창','족발','보쌈','쌀국수','타코','샌드위치','붕어빵','호떡','아이스크림','마카롱','탕후루','갈비탕','감자탕','설렁탕','된장찌개','부대찌개','김치볶음밥','볶음밥','제육볶음','닭갈비','찜닭','닭발','양념치킨','후라이드치킨','불닭','막창','대창','순대','순댓국','국밥','돼지국밥','삼계탕','곰탕','육개장','미역국','떡국','만두','칼국수','수제비','잔치국수','비빔국수','쫄면','우동','소바','라멘','돈까스','카레','오므라이스','규동','텐동','회','광어회','육회','물회','조개구이','꽃게찜','아구찜','해물탕','낙지볶음','오징어볶음','갈치조림','고등어구이','간장게장','양념게장','깍두기','파김치','잡채','갈비찜','소갈비','수육','편육','떡갈비','함박스테이크','곱창전골','샤브샤브','훠궈','양꼬치','꿔바로우','깐풍기','유린기','마파두부','딤섬','북경오리','팟타이','똠얌꿍','분짜','반미','케밥','라자냐','리조또','까르보나라','알리오올리오','봉골레','샐러드','시저 샐러드','프렌치프라이','핫도그','나초','부리또','팬케이크','와플','도넛','크루아상','베이글','케이크','티라미수','브라우니','쿠키','마들렌','푸딩','빙수','팥빙수','젤라또','초콜릿','사탕','젤리','계란빵','군고구마','떡꼬치','츄러스','솜사탕','꿀떡','송편','인절미','약과','식혜','수정과','컵라면','짜파게티','신라면','불닭볶음면','김치전','파전','해물파전','감자전','빈대떡','계란말이','계란찜','계란후라이','스팸','참치김밥','주먹밥','유부초밥','콩나물국밥','비빔냉면','물냉면','막국수','육전'],
+  '과일·채소': ['사과','바나나','딸기','수박','포도','귤','복숭아','망고','파인애플','키위','체리','감','배','참외','레몬','블루베리','당근','양파','감자','고구마','오이','토마토','브로콜리','시금치','배추','무','마늘','고추','가지','호박','옥수수','버섯','자두','살구','매실','석류','무화과','아보카도','코코넛','두리안','리치','망고스틴','용과','패션프루트','자몽','오렌지','한라봉','천혜향','유자','라임','멜론','홍시','곶감','대추','밤','호두','땅콩','아몬드','잣','은행','오디','라즈베리','크랜베리','양배추','상추','깻잎','부추','대파','쪽파','생강','파프리카','피망','청양고추','애호박','단호박','늙은호박','콩나물','숙주','고사리','도라지','더덕','연근','우엉','비트','셀러리','아스파라거스','콜리플라워','케일','루꼴라','청경채','열무','미나리','냉이','쑥','달래','방울토마토','완두콩','강낭콩','팥','서리태','표고버섯','새송이버섯','팽이버섯','느타리버섯','송이버섯','양송이버섯','김','미역','다시마','파래'],
+  '직업': ['의사','소방관','경찰관','선생님','요리사','변호사','판사','간호사','파일럿','승무원','프로그래머','건축가','미용사','농부','어부','사진작가','만화가','기자','아나운서','우주비행사','수의사','약사','택배기사','바리스타','패션 디자이너','화가','목수','군인','회계사','성우','배달원','마술사','검사','국회의원','대통령','공무원','외교관','해군','특수부대원','스님','목사','신부','수녀','교수','연구원','과학자','수학자','천문학자','지질학자','생물학자','화학자','치과의사','한의사','외과의사','응급구조사','물리치료사','영양사','심리상담사','사회복지사','보육교사','유치원 교사','통역사','번역가','작가','시인','소설가','시나리오 작가','웹툰 작가','영화감독','개그맨','아이돌','모델','축구선수','심판','코치','헬스 트레이너','요가 강사','무용수','발레리나','피아니스트','바이올리니스트','지휘자','작곡가','디자이너','일러스트레이터','게임 개발자','개발자','해커','데이터 분석가','유튜버','스트리머','인플루언서','쇼호스트','PD','카메라맨','기상캐스터','앵커','라디오 DJ','웨이터','셰프','파티시에','소믈리에','바텐더','제빵사','네일아티스트','메이크업 아티스트','택시기사','버스기사','기관사','선장','항해사','청소부','경비원','건설 노동자','전기기사','배관공','용접공','자동차 정비사','양봉업자','광부','구급대원','경호원','탐정','형사','세무사','공인중개사','은행원','펀드매니저','보험설계사','마케터','영업사원','사업가','CEO','비서','사서','큐레이터','도슨트','여행 가이드','호텔리어','서커스 단원','스턴트맨','사육사','동물 조련사','조향사','도예가','대장장이','재봉사'],
+  '나라·도시': ['프랑스','일본','미국','영국','이탈리아','브라질','호주','이집트','인도','태국','베트남','스위스','캐나다','독일','스페인','멕시코','튀르키예','러시아','파리','도쿄','뉴욕','런던','로마','시드니','방콕','서울','부산','제주도','두바이','싱가포르','하와이','중국','몽골','필리핀','인도네시아','말레이시아','네팔','캄보디아','라오스','미얀마','대만','홍콩','사우디아라비아','이스라엘','이란','이라크','아랍에미리트','카타르','그리스','포르투갈','네덜란드','벨기에','오스트리아','체코','헝가리','폴란드','스웨덴','노르웨이','핀란드','덴마크','아이슬란드','아일랜드','스코틀랜드','우크라이나','크로아티아','남아프리카공화국','케냐','탄자니아','모로코','에티오피아','나이지리아','뉴질랜드','피지','칠레','페루','아르헨티나','콜롬비아','쿠바','자메이카','베이징','상하이','타이베이','오사카','교토','삿포로','후쿠오카','하노이','다낭','호치민','마닐라','세부','발리','쿠알라룸푸르','델리','뭄바이','이스탄불','아테네','베네치아','피렌체','밀라노','바르셀로나','마드리드','리스본','암스테르담','베를린','뮌헨','프라하','비엔나','부다페스트','취리히','모스크바','상트페테르부르크','스톡홀름','헬싱키','코펜하겐','더블린','샌프란시스코','로스앤젤레스','라스베이거스','시카고','워싱턴 D.C.','마이애미','뉴올리언스','토론토','밴쿠버','멕시코시티','칸쿤','리우데자네이루','부에노스아이레스','카이로','케이프타운','마라케시','인천','대구','대전','광주','울산','수원','경주','전주','강릉','여수','속초','울릉도','독도'],
+  '물건': ['우산','냉장고','선풍기','안경','시계','가위','칫솔','리모컨','이어폰','마우스','지갑','열쇠','손톱깎이','청소기','드라이기','거울','베개','담요','젓가락','숟가락','프라이팬','보온병','계산기','우체통','자전거','캐리어','텐트','손전등','스마트폰','헤드셋','체중계','다리미','책상','의자','침대','소파','옷장','서랍','책장','커튼','카펫','스탠드','전등','액자','알람시계','달력','화분','쓰레기통','빨래건조대','세탁기','건조기','전자레인지','오븐','토스터','밥솥','커피머신','믹서기','에어프라이어','주전자','냄비','도마','칼','국자','뒤집개','접시','그릇','컵','머그컵','텀블러','물병','도시락','포크','앞치마','행주','수세미','비누','샴푸','수건','치약','면도기','빗','헤어롤','화장품','립스틱','향수','선크림','귀이개','휴지','물티슈','마스크','반창고','체온계','선글라스','모자','장갑','목도리','양말','신발','운동화','슬리퍼','부츠','넥타이','벨트','가방','백팩','양산','우비','장화','연필','볼펜','지우개','자','샤프','형광펜','공책','스테이플러','테이프','풀','클립','색연필','크레파스','물감','붓','칠판','책가방','필통','노트북','키보드','모니터','태블릿','스마트워치','충전기','보조배터리','블루투스 스피커','카메라','삼각대','드론','게임기','조이스틱','텔레비전','라디오','에어컨','히터','전기장판','가습기','공기청정기','로봇청소기','망치','드라이버','톱','못','사다리','렌치','자물쇠','손수레','캠핑 의자','침낭','나침반','망원경','현미경','돋보기','지구본','풍선','인형','퍼즐','보드게임','주사위','트럼프 카드','체스','바둑판','윷놀이','축구공','농구공','야구 배트','글러브','배드민턴 라켓','탁구채','골프채','스케이트','스키','킥보드','롤러스케이트','훌라후프','줄넘기','낚싯대','튜브'],
+  '속담·사자성어': ['소 잃고 외양간 고친다','등잔 밑이 어둡다','티끌 모아 태산','낮말은 새가 듣고 밤말은 쥐가 듣는다','누워서 떡 먹기','식은 죽 먹기','그림의 떡','우물 안 개구리','일석이조','유비무환','새옹지마','오비이락','타산지석','설상가상','자업자득','동병상련','온고지신','백문이불여일견','작심삼일','호랑이도 제 말 하면 온다','가는 말이 고와야 오는 말이 곱다','원숭이도 나무에서 떨어진다','사공이 많으면 배가 산으로 간다','고래 싸움에 새우 등 터진다','하늘의 별 따기','전화위복','일취월장','이심전심','금상첨화','우공이산','가랑비에 옷 젖는 줄 모른다','가는 날이 장날이다','갈수록 태산이다','공든 탑이 무너지랴','구슬이 서 말이라도 꿰어야 보배','그 나물에 그 밥','급할수록 돌아가라','까마귀 날자 배 떨어진다','꿩 먹고 알 먹기','남의 떡이 더 커 보인다','내 코가 석 자','누워서 침 뱉기','눈 가리고 아웅','달면 삼키고 쓰면 뱉는다','닭 쫓던 개 지붕 쳐다본다','돌다리도 두들겨 보고 건너라','뒤로 호박씨 깐다','땅 짚고 헤엄치기','뛰는 놈 위에 나는 놈 있다','말 한마디로 천 냥 빚을 갚는다','모난 돌이 정 맞는다','목구멍이 포도청','밑 빠진 독에 물 붓기','백지장도 맞들면 낫다','번갯불에 콩 볶아 먹겠다','보기 좋은 떡이 먹기도 좋다','서당 개 삼 년이면 풍월을 읊는다','세 살 버릇 여든까지 간다','소 귀에 경 읽기','수박 겉 핥기','시작이 반이다','쥐구멍에도 볕 들 날 있다','하룻강아지 범 무서운 줄 모른다','가재는 게 편','아니 땐 굴뚝에 연기 나랴','우물에서 숭늉 찾는다','자라 보고 놀란 가슴 솥뚜껑 보고 놀란다','작은 고추가 더 맵다','종로에서 뺨 맞고 한강에서 화풀이한다','지렁이도 밟으면 꿈틀한다','첫술에 배부르랴','천 리 길도 한 걸음부터','칼로 물 베기','콩 심은 데 콩 나고 팥 심은 데 팥 난다','팔은 안으로 굽는다','고생 끝에 낙이 온다','사필귀정','권선징악','인과응보','결자해지','각골난망','감언이설','견물생심','고진감래','과유불급','교각살우','구사일생','군계일학','마이동풍','막상막하','백전백승','부창부수','불철주야','비일비재','사면초가','산전수전','살신성인','삼고초려','상전벽해','선견지명','속수무책','수수방관','승승장구','시시비비','십중팔구','아전인수','안하무인','약육강식','어부지리','언행일치','역지사지','오리무중','요지부동','용두사미','유유상종','이구동성','이열치열','인산인해','일사천리','일편단심','자초지종','적반하장','전광석화','절치부심','죽마고우','천고마비','천생연분','청출어람','초지일관','침소봉대','토사구팽','파죽지세','풍전등화','함흥차사','호가호위','호시탐탐','화룡점정','임기응변','무용지물'],
+  '예능 프로그램': ['런닝맨','무한도전','1박 2일','놀면 뭐하니','나 혼자 산다','삼시세끼','전지적 참견 시점','아는 형님','신서유기','슈퍼맨이 돌아왔다','미운 우리 새끼','라디오스타','유 퀴즈 온 더 블록','복면가왕','나는 SOLO','지구오락실','스트릿 우먼 파이터','골 때리는 그녀들','피지컬: 100','대탈출','환승연애','강철부대','효리네 민박','꽃보다 할배','개그콘서트','쇼미더머니','프로듀스 101','불후의 명곡','패밀리가 떴다','해피선데이','황금어장','강심장','힐링캠프','무릎팍도사','세바퀴','해피투게더','진짜 사나이','정글의 법칙','윤식당','꽃보다 청춘','꽃보다 누나','스페인 하숙','어쩌다 사장','텐트 밖은 유럽','서진이네','아빠 어디가','금쪽같은 내 새끼','동상이몽','살림하는 남자들','편스토랑','백종원의 골목식당','냉장고를 부탁해','맛있는 녀석들','수요미식회','한국인의 밥상','생활의 달인','세상에 이런 일이','서프라이즈','놀라운 토요일','웃찾사','코미디빅리그','SNL 코리아','슈퍼스타K','K팝스타','보이스 코리아','팬텀싱어','미스트롯','미스터트롯','싱어게인','나는 가수다','히든싱어','고등래퍼','프로듀스 48','걸스플래닛','스트릿 맨 파이터','슈퍼밴드','뭉쳐야 찬다','최강야구','나는 자연인이다','다큐 3일','그것이 알고 싶다','도전 골든벨','스타킹','여고추리반','크라임씬','더 지니어스','피의 게임','데블스 플랜','솔로지옥','하트시그널','짝'],
+  '브랜드': ['삼성','애플','나이키','아디다스','스타벅스','맥도날드','코카콜라','구글','유튜브','넷플릭스','카카오','네이버','쿠팡','배달의민족','토스','현대자동차','테슬라','디즈니','레고','이케아','무인양품','다이소','올리브영','롯데리아','배스킨라빈스','농심','오뚜기','에르메스','샤넬','루이비통','구찌','유니클로','노스페이스','엘지','현대','기아','SK','롯데','CJ','신세계','이마트','홈플러스','코스트코','GS25','CU','세븐일레븐','투썸플레이스','이디야','메가커피','빽다방','컴포즈커피','공차','파리바게뜨','뚜레쥬르','던킨','크리스피크림','서브웨이','버거킹','KFC','맘스터치','교촌치킨','BBQ','bhc','도미노피자','피자헛','파파존스','아웃백','빕스','애슐리','본죽','김밥천국','요기요','당근마켓','무신사','지그재그','컬리','오늘의집','야놀자','여기어때','에어비앤비','우버','카카오택시','티맵','다음','라인','트위터','인스타그램','페이스북','틱톡','디즈니플러스','왓챠','티빙','웨이브','스포티파이','멜론','지니','마이크로소프트','아마존','메타','인텔','엔비디아','소니','닌텐도','플레이스테이션','엑스박스','샤오미','화웨이','도요타','혼다','벤츠','BMW','아우디','폭스바겐','볼보','포르쉐','페라리','람보르기니','롤스로이스','푸마','뉴발란스','컨버스','반스','리바이스','자라','H&M','무지','아크테릭스','파타고니아','룰루레몬','프라다','디올','티파니','까르띠에','롤렉스','카시오','지샥','다이슨','필립스','발뮤다','쿠쿠','쿠첸','락앤락','이니스프리','라네즈','설화수','에스티로더','러쉬','롯데월드','에버랜드','캐리비안 베이','오리온','롯데제과','해태','크라운','빙그레','매일유업','서울우유','풀무원','동원','하림','백설','청정원','삼양','팔도']
+};
+function pickWords(category, n) {
+  const pool = (category && category !== RANDOM_CATEGORY && WORDS[category])
+    ? WORDS[category].slice() : [...new Set(Object.values(WORDS).flat())];
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool.slice(0, n);
+}
+
+/* =====================================================================
+   2. 서버 통신 (Firebase 전용)  - 화면 코드는 이 Api만 호출합니다
+   ===================================================================== */
+const Api = {
+  db: null, auth: null, _pres: null, offset: 0,
+  now() { return Date.now() + this.offset; },
+  R(p) { return this.db.ref(p); },
+  TS: () => firebase.database.ServerValue.TIMESTAMP,
+
+  async init() {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    this.auth = firebase.auth();
+    this.db = firebase.database();
+    this.db.ref('.info/serverTimeOffset').on('value', s => { this.offset = s.val() || 0; });
+    let user = await new Promise(res => { const un = this.auth.onAuthStateChanged(u => { un(); res(u); }); });
+    if (!user) user = (await this.auth.signInAnonymously()).user; // 게스트 로그인
+    return user.uid;
+  },
+
+  /* 프로필 */
+  async getProfile(uid) { return (await this.R(`users/${uid}`).once('value')).val(); },
+  async saveProfile(uid, nickname, avatar) { await this.R(`users/${uid}`).update({ nickname, avatar: avatar || null }); },
+
+  /* 방 만들기 / 들어가기 / 나가기 */
+  async createRoom(uid, nickname, o) {
+    let code = null;
+    for (let i = 0; i < 8 && !code; i++) {
+      const c = genCode();
+      if (!(await this.R(`rooms/${c}/meta`).once('value')).exists()) code = c;
+    }
+    if (!code) throw new Error('방 코드를 만들지 못했어요. 다시 시도해 주세요.');
+    const meta = {
+      hostId: uid, hostName: nickname, mode: o.mode, visibility: o.visibility,
+      chatMode: o.chatMode, chatLimit: o.chatLimit, maxPlayers: o.maxPlayers,
+      category: o.category, status: 'lobby', createdAt: this.TS(), lastSeen: this.TS(), lastActivity: this.TS()
+    };
+    await this.R(`rooms/${code}/meta`).set(meta);
+    await this.R(`rooms/${code}/players/${uid}`).set(newPlayer(nickname));
+    if (o.visibility === 'public') {
+      await this.R(`publicRooms/${code}`).set({
+        hostName: nickname, category: o.category, chatMode: o.chatMode, mode: o.mode,
+        status: 'lobby', playerCount: 1, maxPlayers: o.maxPlayers, createdAt: this.TS(), lastSeen: this.TS(), lastActivity: this.TS()
+      });
+    }
+    return code;
+  },
+
+  async joinRoom(rawCode, uid, nickname) {
+    const code = String(rawCode || '').trim().toUpperCase();
+    if (code.length !== CODE_LEN) throw new Error(`방 코드는 ${CODE_LEN}자리예요.`);
+    const meta = (await this.R(`rooms/${code}/meta`).once('value')).val();
+    if (!meta) throw new Error('없는 방이에요. 코드를 다시 확인해 주세요.');
+    if (meta.lastSeen) { // 오래 비어 있던 방: 서버 규칙이 '오래됐다'고 확인해 줘서 실제로 지워졌을 때만 없어진 방으로 처리
+      const n = this.now();
+      if (n - meta.lastSeen > ROOM_OFFLINE_MS || n - (meta.lastActivity || meta.lastSeen) > ROOM_IDLE_MS) {
+        if (await this.deleteRoomIfStale(code)) throw new Error('오랫동안 사용하지 않아 사라진 방이에요.');
+      }
+    }
+    if ((await this.R(`rooms/${code}/kicked/${uid}`).once('value')).exists()) throw new Error('이 방에서 강퇴되어 들어갈 수 없어요.');
+    const players = (await this.R(`rooms/${code}/players`).once('value')).val() || {};
+    if (!players[uid]) {
+      if (meta.status !== 'lobby' && meta.mode !== 'online') throw new Error('같은 공간 모드는 게임이 시작되면 들어갈 수 없어요.');
+      if (Object.keys(players).length >= meta.maxPlayers) throw new Error('방이 가득 찼어요.');
+      this.lastJoinSpectator = meta.status !== 'lobby'; // 게임 중에 들어오면 관전자
+      await this.R(`rooms/${code}/players/${uid}`).set(newPlayer(nickname));
+      if (meta.visibility === 'public') this.bumpCount(code, +1);
+    } else if (players[uid].nickname !== nickname || JSON.stringify(players[uid].avatar || null) !== JSON.stringify(S.avatar || null)) {
+      await this.R(`rooms/${code}/players/${uid}`).update({ nickname, avatar: S.avatar || null });
+    }
+    return code;
+  },
+
+  bumpCount(code, d) {
+    return this.R(`publicRooms/${code}/playerCount`)
+      .transaction(n => (n === null ? null : Math.max(0, (n || 0) + d))).catch(() => {});
+  },
+
+  async leaveRoom(code, uid) {
+    this.detachPresence(code, uid);
+    const [pS, mS] = await Promise.all([this.R(`rooms/${code}/players`).once('value'), this.R(`rooms/${code}/meta`).once('value')]);
+    const meta = mS.val(); if (!meta) return;
+    const players = pS.val() || {};
+    const others = Object.entries(players).filter(([id]) => id !== uid)
+      .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0));
+    if (others.length === 0) { // 마지막 사람이 나가면 방 삭제
+      await this.db.ref().update({
+        [`rooms/${code}/meta`]: null, [`rooms/${code}/players/${uid}`]: null, [`rooms/${code}/chat`]: null,
+        [`rooms/${code}/kicked`]: null, [`rooms/${code}/muted`]: null, [`rooms/${code}/game`]: null, [`rooms/${code}/words`]: null, [`rooms/${code}/wordHashes`]: null, [`rooms/${code}/reports`]: null, [`publicRooms/${code}`]: null
+      });
+      return;
+    }
+    if (meta.hostId === uid) { // 방장이 나가면 다음 사람에게 방장 넘김
+      const [nid, np] = others[0];
+      if (meta.visibility === 'public') await this.R(`publicRooms/${code}/hostName`).set(np.nickname).catch(() => {});
+      await this.R(`rooms/${code}/meta`).update({ hostId: nid, hostName: np.nickname });
+    }
+    await this.R(`rooms/${code}/players/${uid}`).remove();
+    if (meta.visibility === 'public') this.bumpCount(code, -1);
+  },
+
+  /* 접속 상태 표시 (끊기면 '오프라인'으로만 표시하고 방에는 남겨둠) */
+  attachPresence(code, uid) {
+    this.detachPresence(code, uid);
+    const ref = this.R(`rooms/${code}/players/${uid}/online`);
+    const con = this.R('.info/connected');
+    const fn = con.on('value', s => { if (s.val() === true) { ref.onDisconnect().set(false).catch(() => {}); ref.set(true).catch(() => {}); } });
+    this._pres = { con, fn, ref };
+  },
+  detachPresence() {
+    if (!this._pres) return;
+    this._pres.con.off('value', this._pres.fn);
+    this._pres.ref.onDisconnect().cancel().catch(() => {});
+    this._pres = null;
+  },
+
+  /* 방 실시간 구독 */
+  watchRoom(code, uid, cb) {
+    const subs = ['meta', 'players', 'muted', 'kicked', 'game', 'wordHashes', 'reports'].map(k => {
+      const ref = this.R(`rooms/${code}/${k}`);
+      const fn = ref.on('value', s => cb(k, s.val()), () => {});
+      return () => ref.off('value', fn);
+    });
+    const cref = this.R(`rooms/${code}/chat`).limitToLast(300);
+    const cfn = cref.on('value', s => {
+      const arr = []; s.forEach(ch => { arr.push({ id: ch.key, ...ch.val() }); });
+      cb('chat', arr);
+    }, () => {});
+    subs.push(() => cref.off('value', cfn));
+    const wref = this.R(`rooms/${code}/words/${uid}`); // 내 제시어(내 것만 읽을 수 있음)
+    const wfn = wref.on('value', s => cb('word', s.val()), () => {});
+    subs.push(() => wref.off('value', wfn));
+    return () => subs.forEach(f => f());
+  },
+
+  watchPublic(cb) {
+    const ref = this.R('publicRooms').orderByChild('createdAt').limitToLast(30);
+    const fn = ref.on('value', s => {
+      const arr = []; s.forEach(ch => { arr.push({ code: ch.key, ...ch.val() }); });
+      cb(arr.reverse());
+    }, () => cb([]));
+    return () => ref.off('value', fn);
+  },
+
+  /* 대기실 동작 */
+  setReady(code, uid, v) { return this.R(`rooms/${code}/players/${uid}/ready`).set(!!v); },
+  setWish(code, uid, v) { return this.R(`rooms/${code}/players/${uid}/wish`).set(v || ''); },
+  async setCategory(code, cat, isPublic) {
+    await this.R(`rooms/${code}/meta/category`).set(cat);
+    if (isPublic) await this.R(`publicRooms/${code}/category`).set(cat).catch(() => {});
+  },
+  async kick(code, target, isPublic) {
+    await this.R(`rooms/${code}/kicked/${target}`).set(true);
+    await this.R(`rooms/${code}/players/${target}`).remove();
+    if (isPublic) this.bumpCount(code, -1);
+  },
+  setMuted(code, target, on) {
+    const r = this.R(`rooms/${code}/muted/${target}`);
+    return on ? r.set(true) : r.remove();
+  },
+  sendChat(code, uid, nickname, text, extra) {
+    return this.R(`rooms/${code}/chat`).push({ uid, nickname, text, ts: this.TS(), ...(extra || {}) });
+  },
+  report(code, msgId, uid) { return this.R(`rooms/${code}/reports/${msgId}/${uid}`).set(true); },
+  /* ---- 부적절한 이용자 신고 (게임 경고와 무관, 운영자 검토용) ---- */
+  reportAbuse({ reporterUid, targetUid, targetNickname, roomCode, text, reason }) {
+    return this.R('abuseReports').push({
+      reporterUid, targetUid, targetNickname: (targetNickname || '').slice(0, 20),
+      roomCode: roomCode || '', text: (text || '').slice(0, 200), reason: (reason || '기타').slice(0, 30), ts: this.TS()
+    });
+  },
+  deleteProfile(uid) { return this.R(`users/${uid}`).remove(); },
+  /* 게임 시작 / 다시 하기 (방장) : 제시어를 사람마다 하나씩 배정 */
+  async startGame(code, meta, players) {
+    const ids = Object.keys(players);
+    const words = pickWords(meta.category, ids.length);
+    const online = meta.mode === 'online';
+    const game = { startedAt: this.TS(), ended: false };
+    game.players = Object.fromEntries(ids.map(id => [id, true])); // 이번 판 참가자 (나중에 들어온 사람은 관전자)
+    const up = { [`rooms/${code}/meta/status`]: 'playing' };
+    ids.forEach((id, i) => { up[`rooms/${code}/words/${id}`] = words[i]; });
+    if (online) {
+      // 온라인: 질문 순서 정하기 + 정답 확인용 해시 저장 + 지난 채팅/경고 지우기
+      const order = shuffle(ids);
+      game.order = order;
+      if (meta.chatMode === 'normal') game.turn = { n: 0, qid: order[0], phase: 'ask', at: this.TS() };
+      up[`rooms/${code}/chat`] = null; up[`rooms/${code}/reports`] = null;
+      for (let i = 0; i < ids.length; i++) up[`rooms/${code}/wordHashes/${ids[i]}`] = await wordHash(code, ids[i], words[i]);
+    }
+    up[`rooms/${code}/game`] = game;
+    if (meta.visibility === 'public') up[`publicRooms/${code}/status`] = 'playing';
+    await this.db.ref().update(up);
+  },
+  pressCorrect(code, uid, word, nickname) { return this.R(`rooms/${code}/game/results/${uid}`).set({ at: this.TS(), word: word || '', nickname: nickname || '' }); },
+  /* 오래된 방 정리: 서버 규칙이 (서버 시계 기준으로) 오래됐다고 인정할 때만 지워짐 */
+  async deleteRoomIfStale(code) {
+    try { await this.db.ref().update({ [`rooms/${code}`]: null, [`publicRooms/${code}`]: null }); return true; }
+    catch (e) { return false; }
+  },
+  async cleanPublicEntry(code) { // 공개방 목록에서 오래된 방/사라진 방 항목 정리
+    const m = await this.R(`rooms/${code}/meta`).once('value');
+    if (!m.exists()) { await this.R(`publicRooms/${code}`).remove().catch(() => {}); return; }
+    await this.deleteRoomIfStale(code);
+  },
+  async transferHost(code, uid, nickname, isPublic) {
+    await this.db.ref().update({ [`rooms/${code}/meta/hostId`]: uid, [`rooms/${code}/meta/hostName`]: nickname });
+    if (isPublic) await this.R(`publicRooms/${code}/hostName`).set(nickname).catch(() => {});
+  },
+  markLeft(code, uid, nickname) { return this.R(`rooms/${code}/game/left/${uid}`).set({ nickname: nickname || '', at: this.TS() }); },
+  endGame(code) { return this.R(`rooms/${code}/game/ended`).set(true); },
+  async setStatus(code, status, isPublic, playerIds) {
+    const up = { [`rooms/${code}/meta/status`]: status };
+    if (isPublic) up[`publicRooms/${code}/status`] = status;
+    if (status === 'lobby') {
+      (playerIds || []).forEach(id => { up[`rooms/${code}/players/${id}/ready`] = false; });
+      up[`rooms/${code}/game`] = null; up[`rooms/${code}/words`] = null;
+      up[`rooms/${code}/chat`] = null; up[`rooms/${code}/reports`] = null; up[`rooms/${code}/wordHashes`] = null;
+    }
+    await this.db.ref().update(up);
+  }
+};
+
+/* =====================================================================
+   3. 화면 상태 + 화면 그리기
+   ===================================================================== */
+const S = {
+  uid: null, nickname: '', screen: 'boot',
+  form: { nickname: '', joinCode: '', chat: '', av: null,
+          create: { mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: RANDOM_CATEGORY } },
+  avatar: null, avCache: {}, room: null, publicRooms: [], showQR: false, showHelp: false, busy: false, pendingCode: null, leaving: false,
+  unsubRoom: null, unsubPublic: null, reportTarget: null
+};
+
+const $app = document.getElementById('app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hue = uid => { let h = 0; for (const c of String(uid)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+const AVATARS = ['🐶','🐱','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🦄','🐙','🦖','🐰','🐹','🦉','🐢','🦋','🐳','🦔','🐺','🐗','🐴','🦒','🦓','🦘','🐘','🦜','🐝','🐞','🐬','🦈','🐊','🦕','🐲','🐥','🦎','🐭','👻','🤖','👽','🎃','🤡','🧙'];
+const AV_COLORS = ['#FFD9E8','#DDE5FF','#D9F7EA','#FFF0B8','#EADCFF','#FFE0CC','#D6F1FF','#E6F5C9'];
+// 프로필 캐릭터: 직접 고른 값이 있으면 그것을, 없으면 아이디에서 정한 기본 캐릭터를 씀 (다른 사람이 보낸 값은 목록에 있는 것만 인정)
+const avatarData = uid => {
+  const a = S.avCache[uid];
+  if (a && AVATARS.includes(a.e)) return { e: a.e, c: ((Number(a.c) || 0) % AV_COLORS.length + AV_COLORS.length) % AV_COLORS.length };
+  const h = hue(uid); return { e: AVATARS[h % AVATARS.length], c: h % AV_COLORS.length };
+};
+const avatar = (name, uid) => { const a = avatarData(uid); return `<span class="avatar" style="background:${AV_COLORS[a.c]}">${a.e}</span>`; };
+const roomLink = code => 'https://heads-up-s.netlify.app/?room=' + code;
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.style.display = 'none', 2600);
+}
+async function run(fn) {
+  if (S.busy) return; S.busy = true;
+  try { await fn(); } catch (e) { console.error(e); toast(e.message || '문제가 생겼어요. 다시 시도해 주세요.'); }
+  finally { S.busy = false; }
+}
+
+function categoryOptions(selected, withRandom, emptyLabel) {
+  let h = '';
+  if (withRandom) h += `<option value="${RANDOM_CATEGORY}" ${selected === RANDOM_CATEGORY ? 'selected' : ''}>랜덤(전체)</option>`;
+  if (emptyLabel) h += `<option value="" ${!selected ? 'selected' : ''}>${emptyLabel}</option>`;
+  CATEGORY_GROUPS.forEach(g => {
+    h += `<optgroup label="${g.group}">` + g.items.map(i => `<option ${i === selected ? 'selected' : ''}>${i}</option>`).join('') + '</optgroup>';
+  });
+  return h;
+}
+const seg = (key, val, opts) => `<div class="seg">${opts.map(([v, l]) =>
+  `<button data-act="setCreate" data-key="${key}" data-val="${v}" class="${String(val) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+
+/* ---- 화면들 ---- */
+function viewSetup() {
+  return `<h1>설정이 필요해요</h1>
+  <div class="card"><p>파일 위쪽의 <b>FIREBASE_CONFIG</b> 값이 비어 있어요.</p>
+  <p class="sub">Firebase 콘솔에서 웹 앱을 등록하고 나온 설정값(apiKey, authDomain, databaseURL, projectId, appId)을 붙여 넣은 뒤 다시 열어 주세요.</p></div>`;
+}
+function avPicker(av) {
+  const cur = av && AVATARS.includes(av.e) ? av : avatarData(S.uid);
+  return `<div class="avpick"><div class="avprev"><span class="avatar" style="background:${AV_COLORS[cur.c % AV_COLORS.length]}">${cur.e}</span></div>
+    <div class="avgrid">${AVATARS.map(e => `<button type="button" data-act="pickChar" data-e="${e}" class="${e === cur.e ? 'on' : ''}" aria-label="캐릭터 ${e}">${e}</button>`).join('')}</div>
+    <div class="avcolors">${AV_COLORS.map((c, i) => `<button type="button" data-act="pickColor" data-c="${i}" style="background:${c}" class="${i === (cur.c % AV_COLORS.length) ? 'on' : ''}" aria-label="배경색 ${i + 1}"></button>`).join('')}</div></div>`;
+}
+function viewNickname() {
+  const editing = !!S.nickname;
+  const head = editing
+    ? `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">프로필 수정</h2></div><div class="gap"></div>`
+    : `<div class="hero"><div class="hero-card">?</div><h1 class="title">이마<br>제시어<br>게임</h1></div>`;
+  return `${head}
+  <div class="card"><h2>${editing ? '내 프로필' : '프로필을 만들어요'}</h2><p class="sub">캐릭터를 고르고 이름을 적어 주세요. 친구들에게 이렇게 보여요. 나중에 바꿀 수 있어요.</p>
+  ${avPicker(S.form.av)}
+  <label class="f" for="nick">이름 (최대 ${NICK_MAX}글자)</label>
+  <input id="nick" data-model="nickname" maxlength="${NICK_MAX}" value="${esc(S.form.nickname)}" placeholder="예: 홍길동" autocomplete="off">
+  <div class="gap"></div><button class="btn primary block huge" data-act="saveNickname">${editing ? '저장하기' : '시작하기'}</button></div>
+  ${editing ? `<div class="card"><h2>내 데이터</h2>
+    <p class="sub">닉네임·캐릭터 정보를 서버에서 완전히 지워요. 참여 중인 방이 있다면 먼저 나가 주세요.</p>
+    <button class="btn danger block" data-act="deleteAccount">계정·데이터 삭제</button></div>` : ''}
+  <p class="sub center" style="margin-top:4px">${LEGAL_LINKS}</p>`;
+}
+function viewHome() {
+  const now = Date.now();
+  const list = S.publicRooms.filter(r => (r.status === 'lobby' || r.status === 'playing') && (r.playerCount || 0) > 0 && (r.playerCount || 0) < (r.maxPlayers || 99)
+    && !publicEntryStale(r))
+    .sort((a, b) => ((a.status === 'playing') - (b.status === 'playing')) || ((b.createdAt || 0) - (a.createdAt || 0)));
+  return `<div class="hero"><div class="hero-card">?</div><h1 class="title">이마<br>제시어<br>게임</h1>
+    <p class="tag">내 이마에 붙은 말, 나만 모른다!</p></div>
+  <div class="me-chip">${avatar(S.nickname, S.uid)}<div class="grow"><b>${esc(S.nickname)}</b><div class="sub">게스트 프로필</div></div>
+    <button class="btn small" data-act="editName">프로필 수정</button></div>
+  <div class="tiles"><button class="tile t-create" data-act="goCreate"><span class="ti">🎪</span>방 만들기</button>
+    <button class="tile t-join" data-act="goJoin"><span class="ti">🔑</span>들어가기</button></div>
+  <button class="help-btn" data-act="showHelp">📖 처음이세요? 이용방법 보기</button>
+  <div class="card"><h2>지금 열린 공개방</h2>
+  ${list.some(r => r.status === 'playing') ? '<p class="sub" style="margin:-6px 0 8px">게임 중인 방은 👀 관전만 할 수 있어요.</p>' : ''}
+  ${list.length ? list.map(r => `<div class="pub"><div class="grow"><b>${esc(r.hostName)}</b>님의 방
+    <div class="row wrap" style="gap:6px;margin-top:4px"><span class="badge ${r.status === 'playing' ? 'p' : 'm'}">${r.status === 'playing' ? '🎮 게임 중' : '⏳ 대기 중'}</span><span class="badge v">${esc(categoryLabel(r.category))}</span>
+    <span class="badge">${r.chatMode === 'free' ? '💬 자유채팅' : '📏 일반'}</span><span class="badge g">👥 ${r.playerCount}/${r.maxPlayers}</span></div></div>
+    ${r.status === 'playing' ? `<button class="btn small lemon" data-act="joinPublic" data-code="${r.code}">👀 관전</button>` : `<button class="btn small mint" data-act="joinPublic" data-code="${r.code}">입장</button>`}</div>`).join('')
+    : '<div class="empty">🕊️<br>열려 있는 공개방이 없어요.<br>직접 방을 만들어 보세요!</div>'}</div>
+  <p class="sub center" style="margin-top:10px">${LEGAL_LINKS}</p>`;
+}
+function viewJoin() {
+  return `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">방 들어가기</h2></div><div class="gap"></div>
+  <div class="card"><button class="btn lemon block huge" data-act="scanQR">📷 QR로 들어가기</button>
+  <div class="or">또는 코드로 입력</div>
+  <label class="f" for="jc">방 코드 ${CODE_LEN}자리</label>
+  <input id="jc" class="code" data-model="joinCode" data-upper="1" maxlength="${CODE_LEN}" value="${esc(S.form.joinCode)}" placeholder="ABC123" autocomplete="off" autocapitalize="characters">
+  <div class="gap"></div><button class="btn primary block" data-act="joinCode">들어가기</button>
+  <p class="sub center" style="margin-top:12px">친구가 보낸 링크나 QR을 열면 코드 입력 없이 바로 들어가요.</p></div>`;
+}
+function viewCreate() {
+  const c = S.form.create, online = c.mode === 'online';
+  return `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">방 만들기</h2></div><div class="gap"></div>
+  <div class="card">
+  <label class="f">게임 방식</label>${seg('mode', c.mode, [['online', '🌐 온라인'], ['same', '👥 같은 공간']])}
+  <p class="sub" style="margin-top:6px">${online ? '멀리 있어도 채팅으로 질문하고 답해요.' : '한자리에 모여서 폰을 이마에 대고 해요.'}</p>
+  ${online ? `<label class="f">공개 설정</label>${seg('visibility', c.visibility, [['public', '🔓 공개방'], ['private', '🔒 비공개방']])}
+  <p class="sub" style="margin-top:6px">${c.visibility === 'public' ? '누구나 목록에서 볼 수 있어요.' : '코드·링크·QR로만 들어올 수 있어요.'}</p>
+  <label class="f">채팅 방식</label>${seg('chatMode', c.chatMode, [['normal', '📏 일반모드'], ['free', '💬 자유채팅']])}
+  <p class="sub" style="margin-top:6px">${c.chatMode === 'free' ? '질문·답변 제한 없이 자유롭게 (경고, 정답 시도는 가능)' : '질문·답변 순서와 횟수 규칙이 적용돼요.'}</p>
+  ${c.chatMode === 'normal' ? `<label class="f">채팅 입력 제한시간</label>${seg('chatLimit', c.chatLimit, [[0, '무제한'], [60, '1분'], [120, '2분'], [180, '3분']])}` : ''}` : ''}
+  <label class="f">최대 인원</label>${seg('maxPlayers', c.maxPlayers, [[2, '2'], [4, '4'], [6, '6'], [8, '8']])}
+  <label class="f" for="ccat">제시어 카테고리</label>
+  <select id="ccat" data-change="setCreateCategory">${categoryOptions(c.category, true)}</select>
+  <div class="gap"></div><button class="btn primary block" data-act="createRoom">방 만들기</button></div>`;
+}
+
+function sortedPlayers(r) {
+  return Object.entries(r.players || {}).map(([id, p]) => ({ id, ...p })).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+}
+function viewLobby() {
+  const r = S.room, m = r.meta, me = S.uid, isHost = m.hostId === me, online = m.mode === 'online';
+  const players = sortedPlayers(r), mine = r.players[me] || {};
+  const others = players.filter(p => p.id !== m.hostId);
+  const allReady = others.every(p => p.ready);
+  const canStart = isHost && players.length >= 2 && (!online || allReady);
+  let hint = '';
+  if (isHost) hint = players.length < 2 ? '2명 이상 모이면 시작할 수 있어요.' : (online && !allReady ? '모든 멤버가 준비를 눌러야 시작할 수 있어요.' : '');
+  const muted = !!(r.muted || {})[me];
+  const link = roomLink(r.code);
+
+  return `<div class="row" style="justify-content:space-between"><h2 style="margin:0">대기실</h2>
+    <button class="btn small danger" data-act="leave">나가기</button></div>
+    <div class="row wrap" style="gap:6px;margin:8px 0 14px">
+    <span class="badge v">${online ? '온라인' : '같은 공간'}</span>
+    ${online ? `<span class="badge">${m.visibility === 'public' ? '공개방' : '비공개방'}</span>
+    <span class="badge">${m.chatMode === 'free' ? '자유채팅' : '일반모드 · 입력 ' + limitLabel(m.chatLimit)}</span>` : ''}
+    <span class="badge g">${players.length}/${m.maxPlayers}명</span></div>
+
+  <div class="card"><div class="codebox">${esc(r.code)}</div><div class="gap"></div>
+    <div class="row"><button class="btn small grow" data-act="copyLink">링크 복사</button>
+    <button class="btn small grow" data-act="share">공유</button>
+    <button class="btn small grow" data-act="showQR">QR 보기</button></div>
+    <p class="sub center" style="margin:8px 0 0;word-break:break-all">${esc(link)}</p></div>
+
+  <div class="card"><h2>제시어 카테고리</h2>
+    ${isHost ? `<select data-change="setCategory">${categoryOptions(m.category, true)}</select>`
+      : `<div><span class="badge v">${esc(categoryLabel(m.category))}</span> <span class="sub">방장이 정해요</span></div>`}
+    <label class="f" for="wish">내가 원하는 카테고리 <span class="sub">(프로필에 표시)</span></label>
+    <select id="wish" data-change="setWish">${categoryOptions(mine.wish || '', false, '선택 안 함')}</select></div>
+
+  <div class="card"><h2>멤버</h2>
+    ${players.map(p => `<div class="player">${avatar(p.nickname, p.id)}
+      <div class="grow"><b>${esc(p.nickname)}</b> ${p.id === me ? '<span class="badge l">나</span>' : ''}
+      ${p.id === m.hostId ? '<span class="badge v">방장</span>' : ''}
+      ${p.online === false ? '<span class="badge g">오프라인</span>' : ''}
+      ${(r.muted || {})[p.id] ? '<span class="badge p">채팅 제한</span>' : ''}
+      <div class="row wrap" style="gap:6px;margin-top:4px">
+      ${p.wish ? `<span class="badge">희망: ${esc(p.wish)}</span>` : ''}
+      ${online && p.id !== m.hostId ? (p.ready ? '<span class="badge m">준비 완료</span>' : '<span class="badge g">준비 전</span>') : ''}
+      ${p.id !== me ? `<div class="row wrap" style="gap:6px;margin-top:4px">
+        <button class="btn small" data-act="openReport" data-uid="${p.id}" data-name="${esc(p.nickname)}">🚩 신고</button>
+        <button class="btn small" data-act="toggleBlock" data-uid="${p.id}" data-name="${esc(p.nickname)}">${isBlocked(p.id) ? '차단 해제' : '🚫 차단'}</button>
+      </div>` : ''}</div></div>
+      ${isHost && p.id !== me ? `<div style="display:flex;flex-direction:column;gap:6px">
+        ${online ? `<button class="btn small" data-act="toggleMute" data-uid="${p.id}">${(r.muted || {})[p.id] ? '제한 해제' : '채팅 제한'}</button>` : ''}
+        <button class="btn small danger" data-act="kick" data-uid="${p.id}" data-name="${esc(p.nickname)}">강퇴</button></div>` : ''}
+    </div>`).join('')}</div>
+
+  ${online ? `<div class="card"><h2>채팅</h2><div class="chat" id="chatlog">
+    ${r.chat.length ? r.chat.map(c => isBlocked(c.uid)
+        ? `<div class="msg sys">🚫 차단한 사용자의 메시지예요.</div>`
+        : `<div class="msg ${c.uid === me ? 'me' : ''}">${c.uid === me ? '' : `<b>${esc(c.nickname)}</b><br>`}<span class="t">${esc(c.text)}</span></div>`).join('')
+      : '<div class="empty">첫 메시지를 남겨 보세요.</div>'}</div>
+    <div class="row" style="margin-top:8px"><input id="chatInput" data-model="chat" maxlength="${CHAT_MAX}" value="${esc(S.form.chat)}"
+      placeholder="${muted ? '방장이 채팅을 제한했어요' : '메시지 입력'}" ${muted ? 'disabled' : ''} autocomplete="off">
+    <button class="btn small primary" data-act="sendChat" ${muted ? 'disabled' : ''}>보내기</button></div></div>` : ''}
+
+  <div class="card">
+    ${online && !isHost ? `<button class="btn ${mine.ready ? '' : 'mint'} block" data-act="toggleReady">${mine.ready ? '준비 취소' : '준비'}</button>` : ''}
+    ${isHost ? `<button class="btn primary block" data-act="start" ${canStart ? '' : 'disabled'}>게임 시작</button>
+      ${hint ? `<p class="sub center" style="margin:8px 0 0">${hint}</p>` : ''}` : ''}
+    ${!isHost && !online ? '<p class="sub center" style="margin:0">방장이 게임을 시작하면 화면이 바뀌어요.</p>' : ''}
+    ${!isHost && online ? '<p class="sub center" style="margin:8px 0 0">모두 준비하면 방장이 시작해요.</p>' : ''}</div>`;
+}
+function viewPlaying() {
+  const r = S.room, m = r.meta, isHost = m.hostId === S.uid;
+  return `<h1>게임 시작!</h1>
+  <div class="card"><p>카테고리: <span class="badge v">${esc(categoryLabel(m.category))}</span></p>
+  <p class="sub">온라인 모드의 게임 화면(질문·답변 턴, 채팅 규칙)은 3단계에서 만들 예정이에요. 지금은 '같은 공간' 모드로 게임을 해볼 수 있어요.</p>
+  ${sortedPlayers(r).map(p => `<div class="player">${avatar(p.nickname, p.id)}<b class="grow">${esc(p.nickname)}</b></div>`).join('')}</div>
+  ${isHost ? '<button class="btn block" data-act="backToLobby">대기실로 돌아가기</button>' : '<p class="sub center">방장이 대기실로 돌아가길 기다리는 중…</p>'}`;
+}
+/* ---- 같은 공간 모드: 게임 화면 ---- */
+// 게임에 참가한 전체 명단: 현재 멤버 + 정답 낸 사람 + 중간에 나간 사람
+function rosterIds(r) { // 이번 판 참가자 (게임 중간에 들어온 관전자는 제외)
+  const g = r.game || {};
+  const base = g.players ? Object.keys(g.players) : Object.keys(r.players);
+  return [...new Set([...base, ...Object.keys(g.results || {}), ...Object.keys(g.left || {})])];
+}
+function gamePhase() {
+  const r = S.room, g = r && r.game;
+  if (!g || !g.startedAt) return { phase: 'wait' };
+  if (r.meta.mode === 'online') return (g.ended || aliveIds(r).length <= 1) ? { phase: 'finished' } : { phase: 'playing' };
+  const left = g.startedAt + COUNTDOWN_SEC * 1000 - Api.now();
+  if (left > 0) return { phase: 'countdown', sec: Math.ceil(left / 1000) };
+  const res = g.results || {}, gone = g.left || {}, ids = rosterIds(r);
+  if (g.ended || (ids.length > 0 && ids.every(id => res[id] || gone[id] || !r.players[id]))) return { phase: 'finished' };
+  return { phase: 'playing' };
+}
+function ranking(r) {
+  const res = (r.game && r.game.results) || {};
+  const ids = rosterIds(r), total = ids.length;
+  const rows = Object.entries(res)
+    .map(([id, v]) => ({ id, at: v.at || Api.now(), word: v.word || '' })).sort((a, b) => a.at - b.at)
+    .map((d, i) => ({ ...d, rank: i + 1 }));
+  const pending = ids.filter(id => !res[id]);
+  return { rows, pending, total };
+}
+function rankLabel(rank, total) {
+  if (total >= 2 && rank === total) return '🐢 꼴찌';
+  return (['🥇 ', '🥈 ', '🥉 '][rank - 1] || '') + rank + '등';
+}
+function nameOf(r, id) {
+  const g = r.game || {};
+  return (r.players[id] && r.players[id].nickname) || ((g.left || {})[id] || {}).nickname || ((g.results || {})[id] || {}).nickname || '?';
+}
+function viewGame() {
+  const r = S.room, m = r.meta, me = S.uid, isHost = m.hostId === me;
+  const p = gamePhase();
+  if (p.phase === 'wait') return '<div class="empty">게임을 준비하는 중…</div>';
+  if (p.phase === 'countdown') {
+    return `<div class="rot"><div class="stage cd"><div class="msg">휴대폰을 가로로 돌려서<br>${p.sec}초 안에 이마에 대세요!</div>
+      <div class="count">${p.sec}</div><div>화면이 친구들을 향하게 들어 주세요</div></div></div>`;
+  }
+  const { rows, pending, total } = ranking(r);
+  if (p.phase === 'playing') {
+    const mine = rows.find(x => x.id === me);
+    if (!mine) {
+      const w = r.myWord || '…';
+      return `<div class="rot"><div class="stage wd"><div class="cat">${esc(categoryLabel(m.category))}</div>
+        <div class="word"><span>${esc(w)}</span></div>
+        <button class="btn primary block huge" data-act="correct">정답!</button></div>
+        <div class="row"><button class="btn small grow" data-act="leaveGame">나가기</button>
+        ${isHost ? '<button class="btn small grow" data-act="endGame">게임 그만하기</button>' : ''}</div></div>`;
+    }
+    return `<div class="card center"><h2>정답! 🎉</h2><div class="rank" style="font-size:34px">${rankLabel(mine.rank, total)}</div>
+      <p class="sub">제시어는 <b>${esc(mine.word)}</b>였어요. 다른 멤버를 기다리는 중…</p></div>
+      <div class="card"><h2>진행 상황</h2>${rosterIds(r).map(id => {
+        const d = rows.find(x => x.id === id);
+        return `<div class="player">${avatar(nameOf(r, id), id)}<b class="grow">${esc(nameOf(r, id))}</b>
+          ${d ? `<span class="badge m">${d.rank}번째 정답</span>` : ((r.game.left || {})[id] ? '<span class="badge p">나감 (꼴찌)</span>' : '<span class="badge g">맞히는 중…</span>')}</div>`;
+      }).join('')}</div>
+      <div class="row"><button class="btn small grow" data-act="leaveGame">나가기</button>
+      ${isHost ? '<button class="btn small grow" data-act="endGame">게임 그만하기</button>' : ''}</div>`;
+  }
+  // finished
+  return viewResult();
+}
+
+function viewResult() {
+  const r = S.room, m = r.meta, me = S.uid, isHost = m.hostId === me;
+  const { rows, pending, total } = ranking(r);
+  const isLast = d => total >= 2 && d.rank === total;
+  const podium = rows.filter(d => !isLast(d)).slice(0, 3);
+  const roster = rosterIds(r);
+  const newcomers = Object.entries(r.players).filter(([id]) => !roster.includes(id)).map(([, pl]) => pl.nickname);
+  const newBox = newcomers.length ? `<div class="newmem">👀 새 멤버 ${newcomers.length}명이 들어왔어요!<div>${newcomers.map(esc).join(', ')}</div>
+    <div class="sub">${isHost ? '한 판 더를 누르면 새 멤버와 함께 시작하고, 대기실로를 누르면 새 멤버와 함께 대기실로 이동해요.' : '방장이 한 판 더 또는 대기실로를 누르면 함께 시작해요.'}</div></div>` : '';
+  const meBadge = id => id === me ? ' <span class="badge l">나</span>' : '';
+  const pod = i => {
+    const d = podium[i];
+    if (!d) return '<div class="pod none"><div class="bar"></div></div>';
+    return `<div class="pod p${i + 1} ${d.id === me ? 'me' : ''}">${avatar(nameOf(r, d.id), d.id)}
+      <div class="pn">${esc(nameOf(r, d.id))}${meBadge(d.id)}</div><div class="pw">${esc(d.word)}</div>
+      <div class="bar">${['🥇', '🥈', '🥉'][i]}</div></div>`;
+  };
+  // 전체 순위: 참가한 모든 사람을 프로필과 함께, 내 줄은 보라색으로 강조
+  const rowHtml = d => `<div class="player ${d.id === me ? 'me' : ''} ${isLast(d) ? 'loser' : ''}"><span class="rank ${isLast(d) ? 'last' : ''}">${rankLabel(d.rank, total)}</span>
+      ${avatar(nameOf(r, d.id), d.id)}<div class="grow"><b>${esc(nameOf(r, d.id))}</b>${meBadge(d.id)}
+      <div class="sub">제시어: ${esc(d.word)}</div></div></div>`;
+  const pendRow = id => `<div class="player ${id === me ? 'me' : ''} loser"><span class="rank last">🐢 꼴찌</span>${avatar(nameOf(r, id), id)}
+      <div class="grow"><b>${esc(nameOf(r, id))}</b>${meBadge(id)}
+      <div class="sub">${(r.game.left || {})[id] ? '중간에 나갔어요' : (m.mode === 'online' ? '마지막까지 못 맞혔어요' : '끝까지 못 맞혔어요')}${(m.mode === 'online' && id !== me && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div></div>`;
+  const mine = rows.find(d => d.id === me);
+  const meCard = (mine || pending.includes(me)) ? `<div class="mecard">${avatar(nameOf(r, me), me)}
+    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '🐢 꼴찌'}</div>${mine ? `<div class="sub">제시어: ${esc(mine.word)}</div>` : ''}</div></div>` : '';
+  return `<div class="center"><h1 class="title sm">결과 발표!</h1></div>
+    ${meCard}
+    <div class="podium">${[1, 0, 2].map(pod).join('')}</div>
+    ${(rows.length || pending.length) ? `<div class="card" style="padding-top:6px;padding-bottom:12px"><h2 style="margin-top:10px">🏆 전체 순위</h2>${rows.map(rowHtml).join('')}${pending.map(pendRow).join('')}</div>` : ''}
+    ${newBox}
+    ${isHost ? `<div class="row"><button class="btn primary grow huge" data-act="rematch">한 판 더</button>
+      <button class="btn grow huge" data-act="backToLobby">대기실로</button></div>`
+      : '<p class="sub center">방장이 다음 게임을 정하는 중…</p>'}
+    <button class="btn small block" style="margin-top:14px" data-act="leaveGame">나가기</button>`;
+}
+
+/* =====================================================================
+   이용자 차단 / 신고 (내 기기에만 저장되는 차단 목록 + 운영자에게 전송되는 신고)
+   ===================================================================== */
+const BLOCK_KEY = 'blockedUsers';
+function getBlockList() { try { return JSON.parse(localStorage.getItem(BLOCK_KEY) || '{}'); } catch (e) { return {}; } }
+function isBlocked(uid) { return !!getBlockList()[uid]; }
+function blockUser(uid, nickname) {
+  const list = getBlockList(); list[uid] = { nickname: nickname || '', at: Date.now() };
+  localStorage.setItem(BLOCK_KEY, JSON.stringify(list));
+}
+function unblockUser(uid) { const list = getBlockList(); delete list[uid]; localStorage.setItem(BLOCK_KEY, JSON.stringify(list)); }
+const REPORT_REASONS = ['욕설·혐오 표현', '성적인 내용', '스팸·광고', '부적절한 닉네임', '기타'];
+
+/* =====================================================================
+   온라인 모드 게임 (방장 폰이 진행 담당 / 방장이 나가면 다음 방장이 이어받음)
+   ===================================================================== */
+function norm(s) { return String(s || '').normalize('NFC').toLowerCase().replace(/[\s.,·:;!?'"`~\-_\/()\[\]]/g, ''); }
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const wordHash = (code, uid, text) => sha256hex(code + ':' + uid + ':' + norm(text));
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+// 아직 정답을 못 맞혔고 나가지도 않은 사람들
+function aliveIds(r) {
+  const g = r.game || {}, res = g.results || {}, gone = g.left || {};
+  return rosterIds(r).filter(id => !res[id] && !gone[id] && r.players[id]);
+}
+// 경고 누적: 내 답변에 눌린 경고 + 시간 초과 경고
+function warnCount(r, id) {
+  let n = 0;
+  for (const m of (r.chat || [])) {
+    if (m.kind === 'sys') { if (m.warnTarget === id) n++; }
+    else if (m.uid === id) n += Object.keys((r.reports || {})[m.id] || {}).length;
+  }
+  return n;
+}
+// 지금 내가 할 수 있는 것 계산 (질문 권한 / 답변 권한 / 대기)
+function onlineState(r) {
+  const g = r.game, me = S.uid, normal = r.meta.chatMode === 'normal';
+  if (!g || !g.startedAt) return { phase: 'wait' };
+  const alive = aliveIds(r), meAlive = alive.includes(me), part = rosterIds(r).includes(me);
+  if (g.ended || alive.length <= 1) return { phase: 'finished' };
+  const chat = r.chat || [];
+  if (!normal) return { phase: 'free', role: 'free', part, meAlive, canChat: meAlive, canGuess: meAlive, remaining: null };
+  const t = g.turn; if (!t) return { phase: 'wait' };
+  const limit = r.meta.chatLimit || 0;
+  const remaining = limit ? Math.max(0, Math.ceil((t.at + limit * 1000 - Api.now()) / 1000)) : null;
+  const did = id => chat.some(m => m.turn === t.n && m.uid === id && m.kind === 'a') || chat.some(m => m.turn === t.n && m.kind === 'sys' && m.warnTarget === id);
+  let role = 'wait', canChat = false, canGuess = false;
+  if (t.phase === 'ask') {
+    if (t.qid === me && meAlive) { const asked = chat.some(m => (m.kind === 'q' || m.kind === 'guess') && m.turn === t.n && m.uid === me && !m.invalid); role = 'ask'; canChat = !asked; canGuess = !asked; }
+  } else if (meAlive && (t.need || []).includes(me) && !did(me)) { role = 'answer'; canChat = true; }
+  return { phase: 'normal', t, role, part, canChat, canGuess, qid: t.qid, turnPhase: t.phase, remaining, meAlive };
+}
+
+/* ---- 방장 폰이 하는 진행: 질문→답변 단계 전환, 정답 판정, 시간 초과, 다음 차례 ---- */
+async function driveOnline() {
+  const r = S.room;
+  if (!r || !r.meta || r.meta.mode !== 'online' || r.meta.status !== 'playing' || driverId(r) !== S.uid) return;
+  const g = r.game; if (!g || !g.startedAt || g.ended || S.driving) return;
+  if (S._gid == null || Math.abs(S._gid - g.startedAt) > 2000) { S._gid = g.startedAt; S.judged = {}; S.warned = {}; S.advancedFor = -1; }
+  S.driving = true;
+  try { await driveStep(r, g); } catch (e) { console.error(e); S.advancedFor = -1; } finally { S.driving = false; }
+}
+async function driveStep(r, g) {
+  const code = r.code, chat = r.chat || [], normal = r.meta.chatMode === 'normal';
+  const alive = aliveIds(r);
+  if (alive.length <= 1) return;
+  const t = g.turn;
+
+  // 1) 정답 시도 판정 (입력한 값의 해시를 저장된 해시와 비교)
+  for (const m of chat) {
+    if (m.kind !== 'guess' || m.correct !== undefined || m.invalid || S.judged[m.id]) continue;
+    S.judged[m.id] = 1;
+    const valid = alive.includes(m.uid) && (!normal || (t && t.phase === 'ask' && t.qid === m.uid && m.turn === t.n));
+    if (!valid) { await Api.R(`rooms/${code}/chat/${m.id}/invalid`).set(true); return; }
+    const ok = (await wordHash(code, m.uid, m.text)) === (r.hashes || {})[m.uid];
+    const up = { [`rooms/${code}/chat/${m.id}/correct`]: ok };
+    if (ok) up[`rooms/${code}/game/results/${m.uid}`] = { at: Api.TS(), word: String(m.text).trim(), nickname: m.nickname || '' };
+    await Api.db.ref().update(up);
+    if (normal) { S.advancedFor = t.n; await advanceTurn(r, g, alive.filter(id => !(ok && id === m.uid)), ''); }
+    return;
+  }
+  if (!normal || !t || S.advancedFor === t.n) return;
+
+  const limit = r.meta.chatLimit || 0, elapsed = Api.now() - t.at;
+  // 2) 질문자가 나갔거나 이미 정답 처리된 경우
+  if (!alive.includes(t.qid)) { S.advancedFor = t.n; return advanceTurn(r, g, alive, ''); }
+
+  const judgedGuess = chat.find(m => m.kind === 'guess' && m.turn === t.n && m.uid === t.qid && m.correct !== undefined && !m.invalid);
+  if (judgedGuess) { S.advancedFor = t.n; return advanceTurn(r, g, alive, ''); }
+
+  if (t.phase === 'ask') {
+    const q = chat.find(m => m.kind === 'q' && m.turn === t.n && m.uid === t.qid);
+    if (q) { // 질문이 올라오면 답변 단계로
+      await Api.R(`rooms/${code}/game/turn`).set({ n: t.n, qid: t.qid, phase: 'answer', at: Api.TS(), qMsg: q.id, need: alive.filter(id => id !== t.qid) });
+      return;
+    }
+    if (limit && elapsed > limit * 1000) { S.advancedFor = t.n; return advanceTurn(r, g, alive, `⏰ ${nameOf(r, t.qid)}님이 시간 안에 질문하지 못해 차례가 넘어갔어요`); }
+    return;
+  }
+  // 3) 답변 단계: 모두 답했으면 다음 차례, 시간이 지났으면 미답변자 경고
+  const need = (t.need || []).filter(id => alive.includes(id));
+  const done = id => chat.some(m => m.turn === t.n && m.uid === id && m.kind === 'a') || chat.some(m => m.turn === t.n && m.kind === 'sys' && m.warnTarget === id);
+  const pending = need.filter(id => !done(id));
+  if (pending.length === 0) { S.advancedFor = t.n; return advanceTurn(r, g, alive, ''); }
+  if (limit && elapsed > limit * 1000) {
+    const up = {};
+    for (const id of pending) {
+      const k = t.n + ':' + id; if (S.warned[k]) continue; S.warned[k] = 1;
+      const key = 'w_' + t.n + '_' + id;
+      up[`rooms/${code}/chat/${key}`] = { uid: 'sys', nickname: '', kind: 'sys', text: `⏰ ${nameOf(r, id)}님 답변 시간 초과 (경고)`, warnTarget: id, turn: t.n, ts: Api.TS() };
+    }
+    if (Object.keys(up).length) await Api.db.ref().update(up);
+  }
+}
+async function advanceTurn(r, g, alive, note) {
+  const t = g.turn, order = g.order || [];
+  if (alive.length <= 1) return;
+  const idx = order.indexOf(t.qid); let next = null;
+  for (let k = 1; k <= order.length; k++) { const id = order[(idx + k) % order.length]; if (alive.includes(id)) { next = id; break; } }
+  if (!next) return;
+  const up = { [`rooms/${r.code}/game/turn`]: { n: t.n + 1, qid: next, phase: 'ask', at: Api.TS() } };
+  if (note) {
+    const key = 'n_' + t.n;
+    up[`rooms/${r.code}/chat/${key}`] = { uid: 'sys', nickname: '', kind: 'sys', text: note, turn: t.n, ts: Api.TS() };
+  }
+  await Api.db.ref().update(up);
+}
+
+/* ---- 진행자 선출: 접속 중인 멤버 중 먼저 들어온 사람의 폰이 진행 (방장 폰이 꺼져도 다음 사람이 이어받음) ---- */
+const BEAT_EVERY = 10000, BEAT_STALE = 25000, HOST_OFFLINE_GRACE = 15000;
+function driverId(r) {
+  const now = Api.now();
+  const list = Object.entries(r.players || {})
+    .filter(([id, p]) => p.online !== false && !(p.beat && now - p.beat > BEAT_STALE))
+    .sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0));
+  return list.length ? list[0][0] : null;
+}
+function markActive() { S._act = Date.now(); } // 화면을 만지거나 입력하면 '활동'
+['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(t => document.addEventListener(t, markActive, { passive: true, capture: true }));
+
+// 방에 접속 중이면 30초마다 '접속 중' 표시, 활동이 있으면 '마지막 활동' 시각을 서버에 남김
+function roomPulse() {
+  const r = S.room; if (!r || !r.joined || S.leaving || !r.meta) return;
+  const now = Api.now(), pub = r.meta.visibility === 'public', up = {};
+  if (now - (S._seenAt || 0) >= 30000) {
+    S._seenAt = now; up[`rooms/${r.code}/meta/lastSeen`] = Api.TS(); if (pub) up[`publicRooms/${r.code}/lastSeen`] = Api.TS();
+  }
+  if (S._act && S._act > (S._actSent || 0) && now - (S._actAt || 0) >= 20000) {
+    S._actSent = S._act; S._actAt = now; up[`rooms/${r.code}/meta/lastActivity`] = Api.TS(); if (pub) up[`publicRooms/${r.code}/lastActivity`] = Api.TS();
+  }
+  if (Object.keys(up).length) Api.db.ref().update(up).catch(() => {});
+}
+// 접속 중이어도 모두 10분간 활동이 없으면 진행자가 방을 닫음 (실제로 지워지는지는 서버 규칙이 시간을 확인해서 결정)
+function roomExpiry() {
+  const r = S.room; if (!r || !r.joined || !r.meta || S.leaving || !r.meta.lastActivity) return;
+  if (driverId(r) !== S.uid) return;
+  if (Api.now() - r.meta.lastActivity < ROOM_IDLE_MS || Date.now() - (S._act || 0) < ROOM_IDLE_MS) return;
+  if (Date.now() - (S._closing || 0) < 60000) return; S._closing = Date.now();
+  Api.deleteRoomIfStale(r.code);
+}
+// 공개방 목록: 접속자가 없거나 활동이 없는 방은 숨기고, 서버가 허락하면 정리
+function publicEntryStale(r) {
+  const now = Api.now();
+  if (!r.lastSeen) return now - (r.createdAt || now) > PUBLIC_ROOM_TTL; // 예전에 만든 방
+  return now - r.lastSeen > ROOM_OFFLINE_MS || now - (r.lastActivity || r.lastSeen) > ROOM_IDLE_MS;
+}
+function sweepPublic(list) {
+  S._swept = S._swept || {}; const now = Date.now();
+  (list || []).forEach(r => {
+    if (!r.lastSeen || !publicEntryStale(r)) return;
+    if (S._swept[r.code] && now - S._swept[r.code] < 120000) return;
+    S._swept[r.code] = now; Api.cleanPublicEntry(r.code).catch(() => {});
+  });
+}
+function homeRefresh() { // 메인화면을 켜 두는 동안에도 30초마다 목록을 새로고침
+  if (S.screen !== 'home' || Date.now() - (S._homeAt || 0) < 30000) return;
+  S._homeAt = Date.now(); sweepPublic(S.publicRooms); render();
+}
+
+function heartbeat() { // 10초마다 '나 살아있어요' 표시 (화면이 꺼지거나 멈춘 폰은 진행자에서 빠짐)
+  const r = S.room; if (!r || !r.joined || S.leaving) return;
+  if (Api.now() - (S._beat || 0) < BEAT_EVERY) return;
+  S._beat = Api.now();
+  Api.R(`rooms/${r.code}/players/${S.uid}/beat`).set(Api.TS()).catch(() => {});
+}
+function ensureHost() { // 방장 폰의 연결이 끊긴 채 15초가 지나면, 진행자가 방장 자리를 이어받음
+  const r = S.room; if (!r || !r.joined || !r.meta) return;
+  const h = r.players[r.meta.hostId];
+  if (!h || h.online !== false) { S._hostOffAt = null; return; }
+  if (driverId(r) !== S.uid) return;
+  if (!S._hostOffAt) { S._hostOffAt = Date.now(); return; }
+  if (Date.now() - S._hostOffAt < HOST_OFFLINE_GRACE) return;
+  S._hostOffAt = null;
+  Api.transferHost(r.code, S.uid, S.nickname, r.meta.visibility === 'public').catch(() => {});
+}
+
+/* ---- 다른 멤버의 제시어 구독 (내 것은 서버가 막아 둠) ---- */
+function syncWordListeners() {
+  const r = S.room; if (!r || !r.meta || r.meta.mode !== 'online') return;
+  r._wl = r._wl || {};
+  for (const id of Object.keys(r.players)) {
+    if (id === S.uid || r._wl[id]) continue;
+    const ref = Api.R(`rooms/${r.code}/words/${id}`);
+    const fn = ref.on('value', sn => { r.words[id] = sn.val(); if (S.screen === 'room') render(); }, () => {});
+    r._wl[id] = () => ref.off('value', fn);
+  }
+}
+
+/* ---- 화면 배경색(질문 차례 / 답변 차례 / 대기) + 진동, 타이머 글자 ---- */
+function maybeConfetti() { // 결과 화면이 처음 나올 때 한 번만 색종이
+  const r = S.room;
+  if (!r || !r.meta || r.meta.status !== 'playing' || !r.game || !r.game.startedAt || S.screen !== 'room') return;
+  if (gamePhase().phase !== 'finished') return;
+  if (S._burst && Math.abs(S._burst - r.game.startedAt) < 2000) return;
+  S._burst = r.game.startedAt;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cols = ['#FFD23F', '#FF5C93', '#2DD4A7', '#6A4DFF', '#57B8FF'];
+  for (let i = 0; i < 44; i++) {
+    const c = document.createElement('span'); c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw'; c.style.background = cols[i % cols.length];
+    c.style.setProperty('--dx', (Math.random() * 180 - 90) + 'px'); c.style.setProperty('--rot', (360 + Math.random() * 720) + 'deg');
+    c.style.animationDelay = (Math.random() * 0.6) + 's'; c.style.animationDuration = (2 + Math.random() * 1.4) + 's';
+    document.body.appendChild(c); setTimeout(() => c.remove(), 4800);
+  }
+}
+function applyRole() {
+  const r = S.room; let role = '';
+  if (S.screen === 'room' && r && r.meta && r.meta.mode === 'online' && r.meta.status === 'playing') {
+    const st = onlineState(r);
+    if (st.phase === 'normal' || st.phase === 'free') role = st.meAlive ? st.role : 'watch';
+  }
+  document.documentElement.dataset.role = role;
+  if (role !== S._role) { if ((role === 'ask' || role === 'answer') && navigator.vibrate) navigator.vibrate(200); S._role = role; }
+}
+function timerInfo(r, st) { // 질문/답변 남은 시간 (막대 + 숫자)
+  const label = st.turnPhase === 'ask' ? '질문 시간' : '답변 시간';
+  if (st.remaining == null) return { label, text: '제한 없음', pct: 100, low: false };
+  const limit = r.meta.chatLimit || 1;
+  return { label, text: st.remaining + '초', pct: Math.max(0, Math.min(100, st.remaining / limit * 100)), low: st.remaining <= 10 };
+}
+function updateTimer() {
+  const r = S.room; if (!r || !r.meta) return;
+  const el = document.getElementById('tmr'); if (!el) return;
+  const st = onlineState(r); if (st.phase !== 'normal') return;
+  const ti = timerInfo(r, st);
+  el.textContent = ti.text;
+  const lb = document.getElementById('tlabel'); if (lb) lb.textContent = '⏱ ' + ti.label;
+  const f = document.getElementById('tfill'); if (f) { f.style.width = ti.pct + '%'; f.classList.toggle('low', ti.low); }
+}
+
+function gameMsg(r, c) {
+  if (c.kind === 'sys') return `<div class="msg sys">${esc(c.text)}</div>`;
+  if (isBlocked(c.uid)) return `<div class="msg sys">🚫 차단한 사용자의 메시지예요.</div>`;
+  const mine = c.uid === S.uid, rep = (r.reports || {})[c.id] || {}, cnt = Object.keys(rep).length;
+  const tag = { q: '❓ 질문', a: '💬 답변', guess: '🎯 정답 시도' }[c.kind] || '';
+  let extra = '';
+  if (c.kind === 'guess') extra = c.invalid ? ' <span class="badge g">무효</span>' : c.correct === true ? ' <span class="badge m">정답!</span>' : c.correct === false ? ' <span class="badge p">오답</span>' : ' <span class="badge g">확인 중…</span>';
+  const canWarn = (c.kind === 'a' || c.kind === 'free') && !mine && rosterIds(r).includes(S.uid);
+  const warn = canWarn ? ` <button class="btn small" data-act="report" data-id="${c.id}" ${rep[S.uid] ? 'disabled' : ''}>⚠ 경고${cnt ? ' ' + cnt : ''}</button>` : (cnt ? ` <span class="badge p">⚠ ${cnt}</span>` : '');
+  const flag = !mine ? ` <button class="btn small" data-act="openReport" data-uid="${c.uid}" data-name="${esc(c.nickname)}" data-text="${esc(c.text)}">🚩</button>
+    <button class="btn small" data-act="toggleBlock" data-uid="${c.uid}" data-name="${esc(c.nickname)}">${isBlocked(c.uid) ? '차단 해제' : '🚫'}</button>` : '';
+  return `<div class="msg ${mine ? 'me' : ''}"><b>${esc(c.nickname)}</b> ${tag ? `<span class="badge">${tag}</span>` : ''}${extra}<br><span class="t">${esc(c.text)}</span>${warn}${flag}</div>`;
+}
+
+function peekActive(g) { return !!(S.peek && g && g.startedAt && Math.abs(S.peek - g.startedAt) < 3000); }
+function viewLiveResult() { // 관전 중에 잠깐 보는 '지금까지의 결과'
+  const r = S.room, me = S.uid, { rows, pending, total } = ranking(r);
+  const meBadge = id => id === me ? ' <span class="badge l">나</span>' : '';
+  const rowHtml = d => `<div class="player"><span class="rank">${rankLabel(d.rank, total)}</span>${avatar(nameOf(r, d.id), d.id)}
+    <div class="grow"><b>${esc(nameOf(r, d.id))}</b>${meBadge(d.id)}<div class="sub">제시어: ${esc(d.word)}</div></div></div>`;
+  const pendHtml = id => { const out = (r.game.left || {})[id]; return `<div class="player">${avatar(nameOf(r, id), id)}
+    <div class="grow"><b>${esc(nameOf(r, id))}</b>${meBadge(id)}<div class="sub">${out ? '중간에 나갔어요' : '아직 맞히는 중…'}${(!out && id !== me && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div>
+    ${out ? '<span class="badge p">나감</span>' : '<span class="badge g">진행 중</span>'}</div>`; };
+  return `<div class="center"><h1 class="title sm">중간 결과</h1></div>
+    <div class="card"><h2>🏁 정답을 맞힌 순서</h2>${rows.length ? rows.map(rowHtml).join('') : '<div class="empty">아직 맞힌 사람이 없어요.</div>'}</div>
+    ${pending.length ? `<div class="card"><h2>🤔 아직 맞히는 중</h2>${pending.map(pendHtml).join('')}</div>` : ''}
+    <p class="sub center">게임이 끝나면 결과 화면으로 자동으로 이동해요.</p>
+    <button class="btn primary block huge" data-act="unpeek">👀 관전으로 돌아가기</button>`;
+}
+
+function viewOnline() {
+  const r = S.room, m = r.meta, me = S.uid, isHost = m.hostId === me;
+  const st = onlineState(r);
+  if (st.phase === 'wait') return '<div class="empty">게임을 준비하는 중…</div>';
+  if (st.phase === 'finished') return viewResult(); // 관전 중이던 사람도 자동으로 결과 화면
+  if (S.guessMode && !st.canGuess) S.guessMode = false;
+  const spectating = !st.meAlive; // 정답을 맞힌 사람 + 게임 중간에 들어온 사람
+  if (spectating && peekActive(r.game)) return viewLiveResult();
+  const normal = m.chatMode === 'normal', g = r.game, res = g.results || {}, gone = g.left || {};
+  const { rows, total } = ranking(r);
+  const qn = normal ? nameOf(r, st.qid) : '';
+  const turnLine = normal ? (st.turnPhase === 'ask' ? `${esc(qn)}님이 질문할 차례` : `${esc(qn)}님의 질문에 멤버들이 답변 중`) : '자유채팅 진행 중';
+
+  let banner;
+  if (spectating) banner = st.part ? `🎉 정답! 지금부터 관전 모드예요<br><span class="sub">${turnLine}</span>` : `👀 진행 중인 게임이라 관전만 할 수 있어요<br><span class="sub">${turnLine}</span>`;
+  else if (!normal) banner = '💬 자유채팅 — 제한 없이 대화하고, 언제든 정답에 도전하세요';
+  else if (st.role === 'ask') banner = st.canChat ? '🙋 내 질문 차례! 내 제시어에 대한 질문 1개를 보내거나, 정답을 시도하세요' : '질문을 보냈어요. 답변을 기다리는 중…';
+  else if (st.role === 'answer') banner = `💬 ${esc(qn)}님의 질문에 답변해 주세요 (1회)`;
+  else banner = st.turnPhase === 'ask' ? `${esc(qn)}님이 질문할 차례예요` : `${esc(qn)}님의 질문에 멤버들이 답변하는 중…`;
+
+  const ids = rosterIds(r), ordered = ids.includes(me) ? [me, ...ids.filter(id => id !== me)] : ids;
+  const specN = Object.keys(r.players).filter(id => !ids.includes(id)).length;
+  const cards = ordered.map(id => {
+    const isMe = id === me, d = res[id], out = gone[id], row = rows.find(x => x.id === id);
+    const word = isMe && !d ? '❓ 비공개' : (d ? d.word : (r.words[id] || '…'));
+    const isQ = normal && id === st.qid && !d && !out;
+    const stt = d ? rankLabel(row ? row.rank : 0, total) : out ? '나감 (꼴찌)' : (isQ ? '🙋 질문자' : '');
+    return `<div class="pc ${isMe ? 'me' : ''} ${isQ && !isMe ? 'q' : ''} ${out ? 'gone' : ''}">${isMe ? '<span class="ribbon">나</span>' : ''}${avatar(nameOf(r, id), id)}
+      <div class="nm">${esc(nameOf(r, id))}</div><div class="wd">${esc(word)}</div>
+      <div class="wr">⚠ 경고 ${warnCount(r, id)}</div><div class="stt">${stt}</div></div>`;
+  }).join('');
+
+  const ti = normal ? timerInfo(r, st) : null;
+  const timerBar = ti ? `<div class="timerbar"><span class="tlabel" id="tlabel">⏱ ${ti.label}</span>
+      <div class="tbar"><i id="tfill" class="${ti.low ? 'low' : ''}" style="width:${ti.pct}%"></i></div><b class="tnum" id="tmr">${ti.text}</b></div>` : '';
+  const canSend = S.guessMode ? st.canGuess : st.canChat;
+  const ph = S.guessMode ? '내 제시어를 정확히 입력하세요' : canSend ? (normal ? (st.role === 'ask' ? '질문을 입력하세요 (1회)' : '답변을 입력하세요 (1회)') : '메시지 입력') : '지금은 채팅할 수 없어요';
+  const inputArea = spectating
+    ? '<p class="sub center" style="margin:12px 0 0">👀 관전 중에는 채팅과 정답 시도를 할 수 없어요.<br>게임이 끝나면 결과 화면으로 자동 이동해요.</p>'
+    : `<div class="row" style="margin-top:8px"><input id="gchat" data-model="gchat" maxlength="${CHAT_MAX}" value="${esc(S.form.gchat || '')}"
+      placeholder="${ph}" ${canSend ? '' : 'disabled'} autocomplete="off">
+      <button class="btn small primary" data-act="sendGame" ${canSend ? '' : 'disabled'}>${S.guessMode ? '정답 제출' : '보내기'}</button></div>
+    ${st.canGuess ? `<button class="btn small block ${S.guessMode ? 'lemon' : ''}" style="margin-top:8px" data-act="toggleGuess">🎯 ${S.guessMode ? '정답 시도 취소' : '정답 시도하기'}</button>` : ''}`;
+  return `<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div class="row wrap" style="gap:6px"><span class="badge v">${esc(categoryLabel(m.category))}</span>${specN ? `<span class="badge">👀 관전 ${specN}명</span>` : ''}</div>
+      <div class="row">${spectating ? '<button class="btn small lemon" data-act="peek">🏆 결과 보기</button>' : ''}<button class="btn small" data-act="leaveGame">나가기</button>
+      ${isHost ? '<button class="btn small" data-act="endGame">게임 그만하기</button>' : ''}</div></div>
+    <div class="strip">${cards}</div>
+    <div class="banner">${banner}</div>
+    <div class="chat g" id="chatlog">${(r.chat || []).length ? r.chat.map(c => gameMsg(r, c)).join('') : '<div class="empty">아직 메시지가 없어요.</div>'}</div>
+    ${timerBar}
+    ${inputArea}`;
+}
+
+function viewRoom() {
+  if (!S.room || !S.room.meta) return '<div class="empty">방에 들어가는 중…</div>';
+  if (S.room.meta.status !== 'playing') return viewLobby();
+  return S.room.meta.mode === 'same' ? viewGame() : viewOnline();
+}
+function viewHelp() {
+  return `<div class="modal" data-act="closeHelp"><div class="box help" data-act="noop"><div class="hb">
+    <h2>📖 이용방법</h2>
+    <div class="goal">🎯 내 이마의 제시어를 친구들보다 먼저 맞히면 승리! 내 제시어만 나는 몰라요.</div>
+    <h3>👥 같은 공간 (모여서 하기)</h3>
+    <ol><li>방장이 방을 만들고, 코드·QR로 친구를 불러요.</li>
+      <li>시작하면 폰을 <b>가로로</b> 돌려, 화면이 친구를 향하게 이마에 대요.</li>
+      <li>친구들의 힌트로 맞히면 <b>정답!</b> 버튼을 눌러요.</li>
+      <li>모두 맞히면 순위 발표. 마지막 한 명은 🐢 꼴찌!</li></ol>
+    <h3>🌐 온라인 (멀리서 하기)</h3>
+    <ol><li>방을 만들거나 공개방에 들어가요. 모두 <b>준비</b>를 누르면 방장이 시작해요.</li>
+      <li><b>내 차례</b>(노란 화면)에는 내 제시어에 대해 질문을 딱 1개!</li>
+      <li>다른 멤버(민트 화면)는 1번씩 답해요. 엉뚱한 답엔 <b>⚠ 경고</b>를 눌러요.</li>
+      <li>알 것 같으면 <b>정답 시도</b>! 맞히면 순위 확정, 끝까지 못 맞히면 꼴찌예요.</li></ol>
+    <p class="sub" style="margin:10px 0 8px">💡 다른 멤버의 제시어는 카드에 보이고, 내 것만 ❓로 가려져요. 자유채팅 방은 순서 없이 아무 때나 대화하고 정답에 도전해요. 게임 중인 공개방은 👀 관전으로 들어갈 수 있고, 정답을 맞힌 뒤에도 관전해요.</p></div>
+    <div class="hf"><button class="btn primary block" data-act="closeHelp">알겠어요!</button></div></div></div>`;
+}
+function viewReport() {
+  const t = S.reportTarget;
+  return `<div class="modal" data-act="closeReport"><div class="box" data-act="noop" style="text-align:left;max-width:360px">
+    <h2>🚩 신고하기</h2>
+    <p class="sub">"${esc(t.nickname || '상대')}"님을 신고해요. 사유를 선택해 주세요.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
+      ${REPORT_REASONS.map(r => `<button class="btn" data-act="submitReport" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}
+    </div>
+    <p class="sub" style="font-size:12px">신고 내용은 운영자가 검토하며, 필요한 경우 해당 이용자를 제재할 수 있어요.</p>
+    <button class="btn block" data-act="closeReport">취소</button></div></div>`;
+}
+function viewQR() {
+  return `<div class="modal" data-act="closeQR"><div class="box" data-act="noop">
+    <h2>QR로 초대하기</h2><div id="qr"></div>
+    <p class="sub">친구 폰 카메라로 비추면 바로 들어와요.</p>
+    <p style="font-weight:900;font-size:22px;letter-spacing:4px;margin:4px 0 10px">${esc(S.room.code)}</p>
+    <button class="btn block" data-act="closeQR">닫기</button></div></div>`;
+}
+
+/* ---- 제시어 글자 크기 자동 맞춤: 칸 안에 딱 들어가는 가장 큰 크기를 찾음 ---- */
+function fitWord() {
+  const box = document.querySelector('.stage .word'); if (!box) return;
+  const t = box.firstElementChild; if (!t) return;
+  let lo = 14, hi = Math.max(20, Math.min(280, box.clientHeight));
+  const fits = sz => { t.style.fontSize = sz + 'px'; return t.scrollHeight <= box.clientHeight + 1 && t.scrollWidth <= box.clientWidth + 1; };
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (fits(mid)) lo = mid; else hi = mid; }
+  t.style.fontSize = lo + 'px';
+}
+window.addEventListener('resize', fitWord);
+window.addEventListener('orientationchange', () => setTimeout(fitWord, 200));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitWord()); // 글꼴이 늦게 로드돼도 제시어 크기를 다시 맞춤
+
+/* ---- 그리기 (입력 중인 칸의 포커스를 유지) ---- */
+function render() {
+  const a = document.activeElement;
+  const keep = a && a.id ? { id: a.id, s: a.selectionStart, e: a.selectionEnd } : null;
+  const log = document.getElementById('chatlog');
+  const wasBottom = !log || (log.scrollHeight - log.scrollTop - log.clientHeight < 60);
+  const oldTop = log ? log.scrollTop : 0;
+
+  const views = {
+    setup: viewSetup, name: viewNickname, home: viewHome, join: viewJoin, create: viewCreate, room: viewRoom,
+    boot: () => '<div class="boot"><div class="boot-card">🤔</div><div class="boot-dots"><i></i><i></i><i></i></div></div>'
+  };
+  const isNewScreen = S.screen !== S._lastScreen; S._lastScreen = S.screen;
+  $app.innerHTML = '<div id="viewWrap">' + (views[S.screen] || views.boot)() + '</div>'
+    + (S.showQR && S.room ? viewQR() : '') + (S.showHelp && S.screen === 'home' ? viewHelp() : '') + (S.reportTarget ? viewReport() : '');
+  if (isNewScreen) { const vw = document.getElementById('viewWrap'); if (vw) vw.classList.add('enter'); }
+
+  const nlog = document.getElementById('chatlog');
+  if (nlog) nlog.scrollTop = wasBottom ? nlog.scrollHeight : oldTop;
+  fitWord();
+  applyRole();
+  maybeConfetti();
+  if (keep) { const el = document.getElementById(keep.id); if (el) { el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch (e) {} } }
+  if (S.showQR && typeof QRCode !== 'undefined') {
+    const box = document.getElementById('qr');
+    if (box) new QRCode(box, { text: roomLink(S.room.code), width: 220, height: 220 });
+  }
+}
+
+/* =====================================================================
+   4. 화면 이동 / 방 입장 흐름
+   ===================================================================== */
+function go(screen) {
+  Scanner.close(); S.screen = screen; S.showQR = false; S.showHelp = false;
+  if (screen === 'home') { if (!S.unsubPublic) S.unsubPublic = Api.watchPublic(list => { S.publicRooms = list; sweepPublic(list); if (S.screen === 'home') render(); }); }
+  else if (S.unsubPublic) { S.unsubPublic(); S.unsubPublic = null; }
+  render(); window.scrollTo(0, 0);
+}
+
+function enterRoom(code) {
+  if (S.unsubRoom) S.unsubRoom();
+  S.leaving = false;
+  S.room = { code, meta: null, players: {}, muted: {}, kicked: {}, chat: [], game: null, myWord: null, words: {}, hashes: {}, reports: {}, joined: false };
+  S.peek = null; S._seenAt = 0; S._actSent = 0; S._actAt = 0; markActive();
+  if (Api.lastJoinSpectator) { toast('진행 중인 게임이에요. 관전 모드로 들어왔어요 👀'); Api.lastJoinSpectator = false; }
+  localStorage.setItem('lastRoom', code);
+  Api.attachPresence(code, S.uid);
+  S.unsubRoom = Api.watchRoom(code, S.uid, (key, val) => {
+    const r = S.room; if (!r || r.code !== code) return;
+    if (key === 'meta') {
+      if (val === null && r.meta) {
+        const idle = r.meta.lastActivity && Api.now() - r.meta.lastActivity > ROOM_IDLE_MS - 60000;
+        toast(idle ? '10분 동안 아무도 활동하지 않아서 방이 닫혔어요.' : '방이 닫혔어요.'); return leaveLocal();
+      }
+      const prevHost = r.meta && r.meta.hostId;
+      r.meta = val;
+      if (val && prevHost && prevHost !== val.hostId) {
+        if (val.hostId === S.uid) toast('내가 새 방장이 되었어요.'); else if (prevHost === S.uid) toast('방장이 다른 멤버로 바뀌었어요.');
+      }
+    } else if (key === 'players') {
+      r.players = val || {};
+      Object.entries(r.players).forEach(([id, pl]) => { if (pl && pl.avatar) S.avCache[id] = pl.avatar; });
+      if (r.players[S.uid]) r.joined = true;
+      else if (r.joined && !S.leaving) { toast('방장에 의해 강퇴되었어요.'); return leaveLocal(); }
+    } else if (key === 'muted') r.muted = val || {};
+    else if (key === 'kicked') r.kicked = val || {};
+    else if (key === 'chat') r.chat = val || [];
+    else if (key === 'game') r.game = val;
+    else if (key === 'word') r.myWord = val;
+    else if (key === 'wordHashes') r.hashes = val || {};
+    else if (key === 'reports') r.reports = val || {};
+    if (r.meta) { syncWordListeners(); if (S.screen !== 'room') go('room'); else render(); }
+  });
+  S.screen = 'room'; render();
+}
+let wakeLock = null;
+async function requestWake() { if (wakeLock || !navigator.wakeLock) return; try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) {} }
+function releaseWake() { if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; } }
+function tick() { // 카운트다운/게임 단계가 바뀌면 화면을 다시 그림
+  const r = S.room;
+  heartbeat(); ensureHost(); roomPulse(); roomExpiry(); homeRefresh();
+  if (r && r.meta && r.meta.mode === 'online' && r.meta.status === 'playing' && S.screen === 'room') { driveOnline(); updateTimer(); return; }
+  if (!r || !r.meta || r.meta.mode !== 'same' || r.meta.status !== 'playing' || S.screen !== 'room') { releaseWake(); S._pk = null; return; }
+  const p = gamePhase(), key = p.phase + ':' + (p.sec || '');
+  if (p.phase === 'countdown' || p.phase === 'playing') requestWake(); else releaseWake();
+  try { if (screen.orientation && screen.orientation.lock) { if (p.phase === 'countdown' || p.phase === 'playing') screen.orientation.lock(LANDSCAPE_HOME_SIDE === 'left' ? 'landscape-secondary' : 'landscape-primary').catch(() => {}); else screen.orientation.unlock(); } } catch (e) {}
+  if (key !== S._pk) { S._pk = key; render(); }
+}
+setInterval(tick, 250);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { S._beat = 0; S._seenAt = 0; } });
+
+function leaveLocal() {
+  releaseWake();
+  if (S.room && S.room._wl) Object.values(S.room._wl).forEach(f => f());
+  if (S.unsubRoom) { S.unsubRoom(); S.unsubRoom = null; }
+  Api.detachPresence();
+  S.room = null; S.form.chat = '';
+  localStorage.removeItem('lastRoom');
+  go('home');
+}
+
+/* =====================================================================
+   5. 버튼/입력 동작
+   ===================================================================== */
+/* ---- QR 스캔: 카메라를 켜서 친구 방의 QR/링크를 읽음 ---- */
+function extractRoomCode(text) {
+  text = String(text || '').trim();
+  try { const c = new URL(text).searchParams.get('room'); if (c && /^[A-Za-z0-9]{6}$/.test(c)) return c.toUpperCase(); } catch (e) {}
+  if (/^[A-Za-z0-9]{6}$/.test(text)) return text.toUpperCase();
+  return null;
+}
+const Scanner = {
+  el: null, stream: null, raf: 0, detector: null, busy: false, last: 0,
+  async open(onCode) {
+    if (this.el) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('이 브라우저에서는 카메라를 쓸 수 없어요. 코드로 입력해 주세요.'); return; }
+    const el = document.createElement('div'); el.className = 'scan';
+    el.innerHTML = '<video playsinline muted autoplay></video><div class="scan-frame"></div><div class="scan-msg">친구 폰의 QR을 네모 안에 맞춰 주세요</div><button class="btn block" type="button">취소</button>';
+    document.body.appendChild(el); this.el = el;
+    el.querySelector('button').addEventListener('click', () => this.close());
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    } catch (e) {
+      this.close();
+      toast(e && e.name === 'NotAllowedError' ? '카메라 권한을 허용해 주세요. (주소창 왼쪽 자물쇠 → 권한)' : '카메라를 켜지 못했어요. 코드로 입력해 주세요.');
+      return;
+    }
+    if (this.el !== el) { stream.getTracks().forEach(t => t.stop()); return; } // 그 사이 취소한 경우
+    this.stream = stream;
+    const v = el.querySelector('video'); v.srcObject = stream; try { await v.play(); } catch (e) {}
+    this.detector = null;
+    if ('BarcodeDetector' in window) { try { this.detector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { this.detector = null; } }
+    const canvas = document.createElement('canvas'), cx = canvas.getContext('2d', { willReadFrequently: true });
+    const loop = async () => {
+      if (this.el !== el) return;
+      const now = Date.now();
+      if (v.readyState >= 2 && !this.busy && now - this.last > 120) {
+        this.busy = true; this.last = now;
+        try {
+          let text = null;
+          if (this.detector) {
+            try { const res = await this.detector.detect(v); if (res.length) text = res[0].rawValue; }
+            catch (e) { this.detector = null; } // 이 기기에서 안 되면 아래 방식으로 전환
+          } else if (window.jsQR && v.videoWidth) {
+            const sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+            canvas.width = Math.round(v.videoWidth * sc); canvas.height = Math.round(v.videoHeight * sc);
+            cx.drawImage(v, 0, 0, canvas.width, canvas.height);
+            const q = jsQR(cx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            if (q) text = q.data;
+          }
+          if (text) {
+            const code = extractRoomCode(text);
+            if (code) { this.close(); onCode(code); return; }
+            toast('이 게임의 QR이 아니에요.'); await new Promise(r => setTimeout(r, 1500));
+          }
+        } catch (e) {}
+        this.busy = false;
+      }
+      this.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  },
+  close() {
+    cancelAnimationFrame(this.raf);
+    if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+    if (this.el) { this.el.remove(); this.el = null; }
+    this.busy = false;
+  }
+};
+
+const Actions = {
+  saveNickname() {
+    const n = S.form.nickname.trim();
+    if (!n) return toast('이름을 입력해 주세요.');
+    return run(async () => {
+      const av = S.form.av || avatarData(S.uid);
+      await Api.saveProfile(S.uid, n, av);
+      S.nickname = n; S.avatar = { ...av }; S.avCache[S.uid] = S.avatar; localStorage.setItem('nick', n);
+      const pending = S.pendingCode; S.pendingCode = null;
+      go('home');
+      if (pending) { const c = await Api.joinRoom(pending, S.uid, S.nickname); enterRoom(c); }
+    });
+  },
+  editName() { S.form.nickname = S.nickname; S.form.av = { ...(S.avatar || avatarData(S.uid)) }; go('name'); },
+  deleteAccount() {
+    if (S.room) { toast('방에 들어가 있으면 삭제할 수 없어요. 먼저 나가 주세요.'); return; }
+    if (!confirm('정말 계정과 데이터를 삭제할까요?\n닉네임, 캐릭터 설정이 모두 사라지고 되돌릴 수 없어요.')) return;
+    return run(async () => {
+      await Api.deleteProfile(S.uid);
+      localStorage.removeItem('nick'); localStorage.removeItem('lastRoom');
+      S.nickname = ''; S.avatar = null; S.form.nickname = ''; S.form.av = null;
+      toast('계정과 데이터를 삭제했어요.');
+      go('name');
+    });
+  },
+  pickChar(d) { S.form.av = { ...(S.form.av || avatarData(S.uid)), e: d.e }; render(); },
+  pickColor(d) { S.form.av = { ...(S.form.av || avatarData(S.uid)), c: Number(d.c) }; render(); },
+  goHome() { go('home'); },
+  goCreate() { go('create'); },
+  goJoin() { S.form.joinCode = ''; go('join'); },
+  scanQR() { Scanner.open(code => { S.form.joinCode = ''; Actions.joinWith(code); }); },
+  setCreate(d) {
+    const c = S.form.create; const v = /^\d+$/.test(d.val) ? Number(d.val) : d.val;
+    c[d.key] = v;
+    if (c.mode === 'same') { c.visibility = 'private'; c.chatMode = 'normal'; c.chatLimit = 0; }
+    render();
+  },
+  createRoom() {
+    return run(async () => {
+      const c = { ...S.form.create };
+      if (c.mode === 'same') { c.visibility = 'private'; c.chatMode = 'normal'; c.chatLimit = 0; }
+      if (c.chatMode === 'free') c.chatLimit = 0;
+      const code = await Api.createRoom(S.uid, S.nickname, c);
+      enterRoom(code);
+    });
+  },
+  joinCode() { return Actions.joinWith(S.form.joinCode); },
+  joinPublic(d) { return Actions.joinWith(d.code); },
+  joinWith(code) { return run(async () => { const c = await Api.joinRoom(code, S.uid, S.nickname); S.form.joinCode = ''; enterRoom(c); }); },
+  leave() {
+    return run(async () => {
+      S.leaving = true;
+      const r = S.room, code = r.code;
+      // 게임 중에 정답 못 낸 채로 나가면 '나감' 기록 → 결과에서 꼴찌 처리
+      if (r.game && rosterIds(r).includes(S.uid) && !((r.game.results || {})[S.uid])) await Api.markLeft(code, S.uid, S.nickname).catch(() => {});
+      await Api.leaveRoom(code, S.uid);
+      leaveLocal();
+    });
+  },
+  toggleGuess() { S.guessMode = !S.guessMode; render(); const i = document.getElementById('gchat'); if (i) i.focus(); },
+  report(d) {
+    if (!rosterIds(S.room).includes(S.uid)) return toast('관전 중에는 경고를 줄 수 없어요.');
+    return Api.report(S.room.code, d.id, S.uid).catch(() => toast('경고를 보내지 못했어요.'));
+  },
+  peek() { S.peek = (S.room && S.room.game && S.room.game.startedAt) || Date.now(); render(); window.scrollTo(0, 0); },
+  unpeek() { S.peek = null; render(); },
+  sendGame() {
+    const r = S.room; if (!r || r.meta.mode !== 'online') return;
+    const text = (S.form.gchat || '').trim(); if (!text) return;
+    const st = onlineState(r), normal = r.meta.chatMode === 'normal';
+    let kind;
+    if (S.guessMode) { if (!st.canGuess) return toast('지금은 정답을 시도할 수 없어요.'); kind = 'guess'; }
+    else { if (!st.canChat) return toast('지금은 채팅할 수 없어요.'); kind = !normal ? 'free' : (st.turnPhase === 'ask' ? 'q' : 'a'); }
+    const turn = normal ? st.t.n : 0;
+    S.form.gchat = ''; S.guessMode = false;
+    Api.sendChat(r.code, S.uid, S.nickname, text.slice(0, CHAT_MAX), { kind, turn }).catch(() => toast('메시지를 보내지 못했어요.'));
+    render(); const i = document.getElementById('gchat'); if (i) i.focus();
+  },
+  leaveGame() {
+    const r = S.room, phase = gamePhase().phase;
+    const answered = !!((r.game && r.game.results) || {})[S.uid];
+    const part = !r.game || rosterIds(r).includes(S.uid);
+    const msg = (phase === 'finished' || !part) ? '방에서 나갈까요?'
+      : answered ? '지금 나가도 내 등수는 그대로 남아요.\n나갈까요?'
+      : '게임 중에 나가면 꼴찌로 처리돼요.\n나갈까요?';
+    if (!confirm(msg)) return;
+    return Actions.leave();
+  },
+  setCategory(v) { const r = S.room; return Api.setCategory(r.code, v, r.meta.visibility === 'public').catch(e => toast(e.message)); },
+  setWish(v) { return Api.setWish(S.room.code, S.uid, v).catch(e => toast(e.message)); },
+  setCreateCategory(v) { S.form.create.category = v; },
+  toggleReady() { const me = S.room.players[S.uid] || {}; return Api.setReady(S.room.code, S.uid, !me.ready).catch(e => toast(e.message)); },
+  kick(d) {
+    if (!confirm(`${d.name}님을 강퇴할까요?\n강퇴하면 이 방에 다시 들어올 수 없어요.`)) return;
+    return run(() => Api.kick(S.room.code, d.uid, S.room.meta.visibility === 'public'));
+  },
+  toggleMute(d) { return Api.setMuted(S.room.code, d.uid, !(S.room.muted || {})[d.uid]).catch(e => toast(e.message)); },
+  toggleBlock(d) {
+    if (isBlocked(d.uid)) { unblockUser(d.uid); toast(`${d.name || '이용자'}님 차단을 해제했어요.`); }
+    else { blockUser(d.uid, d.name); toast(`${d.name || '이용자'}님을 차단했어요. 이제 메시지가 보이지 않아요.`); }
+    render();
+  },
+  openReport(d) { S.reportTarget = { uid: d.uid, nickname: d.name || '', roomCode: S.room ? S.room.code : '', text: d.text || '' }; render(); },
+  closeReport() { S.reportTarget = null; render(); },
+  submitReport(d) {
+    const t = S.reportTarget; if (!t) return;
+    S.reportTarget = null; render();
+    Api.reportAbuse({ reporterUid: S.uid, targetUid: t.uid, targetNickname: t.nickname, roomCode: t.roomCode, text: t.text, reason: d.reason })
+      .then(() => toast('신고가 접수됐어요. 확인 후 조치할게요.'))
+      .catch(() => toast('신고 접수에 실패했어요. 다시 시도해 주세요.'));
+  },
+  sendChat() {
+    const text = S.form.chat.trim(); if (!text) return;
+    S.form.chat = '';
+    Api.sendChat(S.room.code, S.uid, S.nickname, text.slice(0, CHAT_MAX)).catch(() => toast('메시지를 보내지 못했어요.'));
+    render(); const i = document.getElementById('chatInput'); if (i) i.focus();
+  },
+  start() {
+    return run(async () => {
+      const r = S.room; if (r.meta.hostId !== S.uid) return;
+      await Api.startGame(r.code, r.meta, r.players);
+    });
+  },
+  rematch() { return Actions.start(); },
+  correct() {
+    const r = S.room; if (!r || !r.myWord) return;
+    Api.pressCorrect(r.code, S.uid, r.myWord, S.nickname).catch(() => toast('정답 처리에 실패했어요. 다시 눌러 주세요.'));
+  },
+  endGame() {
+    if (!confirm('게임을 여기서 끝낼까요?\n못 맞힌 사람은 꼴찌 처리돼요.')) return;
+    return Api.endGame(S.room.code).catch(e => toast(e.message));
+  },
+  backToLobby() {
+    return run(async () => {
+      const r = S.room;
+      await Api.setStatus(r.code, 'lobby', r.meta.visibility === 'public', Object.keys(r.players));
+    });
+  },
+  async copyLink() {
+    const link = roomLink(S.room.code);
+    try { await navigator.clipboard.writeText(link); toast('링크를 복사했어요.'); }
+    catch (e) { prompt('링크를 복사해 주세요', link); }
+  },
+  async share() {
+    const link = roomLink(S.room.code);
+    if (navigator.share) { try { await navigator.share({ title: '이마 제시어 게임', text: `방 코드 ${S.room.code}`, url: link }); } catch (e) {} }
+    else Actions.copyLink();
+  },
+  showQR() { S.showQR = true; render(); },
+  closeQR() { S.showQR = false; render(); },
+  showHelp() { S.showHelp = true; render(); },
+  closeHelp() { S.showHelp = false; render(); }
+};
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+  const fn = Actions[t.dataset.act]; if (fn) fn(t.dataset, t);
+});
+document.addEventListener('change', e => {
+  const t = e.target.closest('[data-change]'); if (t && Actions[t.dataset.change]) Actions[t.dataset.change](t.value);
+});
+document.addEventListener('input', e => {
+  const t = e.target; if (!t.dataset || !t.dataset.model) return;
+  if (t.dataset.upper) t.value = t.value.toUpperCase();
+  S.form[t.dataset.model] = t.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'chatInput') Actions.sendChat();
+  else if (e.target.id === 'gchat') Actions.sendGame();
+  else if (e.target.id === 'jc') Actions.joinCode();
+  else if (e.target.id === 'nick') Actions.saveNickname();
+});
+
+/* ---- 안드로이드 하드웨어 뒤로가기: 화면 안에서 자연스럽게 뒤로 이동, 홈에서 한 번 더 누르면 종료 ---- */
+let backPressedOnce = false;
+function handleBack() {
+  if (S.reportTarget) return Actions.closeReport();
+  if (S.showQR) { S.showQR = false; return render(); }
+  if (S.showHelp) { S.showHelp = false; return render(); }
+  if (document.querySelector('.scan')) return Scanner.close();
+  if (S.screen === 'join' || S.screen === 'create') return go('home');
+  if (S.screen === 'name' && S.nickname) return go('home'); // 프로필 수정 중 취소
+  if (S.screen === 'room' && S.room && S.room.meta && S.room.meta.status === 'playing') return; // 게임 중엔 화면 안의 '나가기' 버튼으로만
+  if (S.screen === 'room') return Actions.leave();
+  if (S.screen === 'home') {
+    const CP = window.Capacitor && window.Capacitor.Plugins;
+    if (!CP || !CP.App) return;
+    if (backPressedOnce) return CP.App.exitApp();
+    backPressedOnce = true; toast('한 번 더 누르면 종료돼요');
+    setTimeout(() => { backPressedOnce = false; }, 2000);
+  }
+}
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+  window.Capacitor.Plugins.App.addListener('backButton', handleBack);
+}
+
+/* =====================================================================
+   6. 시작
+   ===================================================================== */
+
+/* ---- 스크린샷용 하드코딩 데이터 (Firebase 없이 화면만 그림) ---- */
+S.uid = 'me';
+S.nickname = '선호';
+S.avatar = { e: '🦊', c: 2 };
+S.avCache['me'] = S.avatar;
+S.avCache['p2'] = { e: '🐼', c: 5 };
+S.avCache['p3'] = { e: '🐸', c: 1 };
+S.avCache['p4'] = { e: '🦄', c: 3 };
+
+function mockRoom(overrides) {
+  const base = {
+    code: 'AB12CD',
+    meta: { hostId: 'me', mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: '연예인', status: 'lobby' },
+    players: {
+      me: { nickname: '선호', avatar: S.avatar, ready: false, online: true },
+      p2: { nickname: '하늘', avatar: S.avCache.p2, ready: true, online: true },
+      p3: { nickname: '민준', avatar: S.avCache.p3, ready: true, online: true },
+      p4: { nickname: '서연', avatar: S.avCache.p4, ready: false, online: true }
+    },
+    muted: {}, kicked: {}, reports: {},
+    chat: [
+      { id: 'c1', kind: 'q', uid: 'p2', nickname: '하늘', text: '이 사람 가수야?' },
+      { id: 'c2', kind: 'a', uid: 'p3', nickname: '민준', text: '응 맞아! 최근에 신곡도 냈어' },
+      { id: 'c3', kind: 'guess', uid: 'p2', nickname: '하늘', text: '아이유', correct: true }
+    ],
+    myWord: '아이유', words: { p2: '방탄소년단', p3: '블랙핑크', p4: '아이브' },
+    joined: true
+  };
+  return Object.assign(base, overrides || {});
+}
+
+window.showScreen = function (name) {
+  S.showQR = false; S.showHelp = false; S.reportTarget = null; S.room = null;
+  if (name === 'home') {
+    S.screen = 'home';
+    S.publicRooms = [
+      { code: 'AB12CD', hostName: '하늘', status: 'lobby', playerCount: 3, maxPlayers: 6, category: '연예인', chatMode: 'normal', createdAt: Date.now() },
+      { code: 'XY99ZZ', hostName: '민준', status: 'playing', playerCount: 3, maxPlayers: 6, category: '랜덤(전체)', chatMode: 'free', createdAt: Date.now() }
+    ];
+  } else if (name === 'create') {
+    S.screen = 'create';
+  } else if (name === 'lobby') {
+    S.room = mockRoom({});
+    S.screen = 'room';
+  } else if (name === 'gameOnline') {
+    const r = mockRoom({
+      meta: { hostId: 'me', mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: '연예인', status: 'playing' },
+      game: { startedAt: Date.now() - 20000, ended: false, order: ['p2', 'me', 'p3', 'p4'], turn: { n: 1, qid: 'me', phase: 'ask', at: Date.now() }, players: { me: true, p2: true, p3: true, p4: true } }
+    });
+    S.room = r;
+    document.documentElement.dataset.role = 'ask';
+    S.screen = 'room';
+  } else if (name === 'result') {
+    const r = mockRoom({
+      meta: { hostId: 'me', mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: '연예인', status: 'playing' },
+      game: {
+        startedAt: Date.now() - 90000, ended: true,
+        players: { me: true, p2: true, p3: true, p4: true },
+        results: {
+          p2: { at: Date.now() - 60000, word: '방탄소년단', nickname: '하늘' },
+          me: { at: Date.now() - 40000, word: '아이유', nickname: '선호' },
+          p3: { at: Date.now() - 10000, word: '블랙핑크', nickname: '민준' }
+        }
+      }
+    });
+    S.room = r;
+    S.screen = 'room';
+  }
+  render();
+  window.scrollTo(0, 0);
+};
+window.showScreen('home');
+</script>
+</body>
+</html>
