@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<title>이마 제시어 게임</title>
+<title>제시어게임(양세찬게임)</title>
 <style>
 :root{
   --ink:#1D1642; --sub:#6b6790; --bg:#EEEAFF;
@@ -1567,7 +1567,7 @@ const Actions = {
   },
   async share() {
     const link = roomLink(S.room.code);
-    if (navigator.share) { try { await navigator.share({ title: '이마 제시어 게임', text: `방 코드 ${S.room.code}`, url: link }); } catch (e) {} }
+    if (navigator.share) { try { await navigator.share({ title: '제시어게임(양세찬게임)', text: `방 코드 ${S.room.code}`, url: link }); } catch (e) {} }
     else Actions.copyLink();
   },
   showQR() { S.showQR = true; render(); },
