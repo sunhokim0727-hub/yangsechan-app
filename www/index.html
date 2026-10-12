@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<title>제시어게임(양세찬게임)</title>
+<title>제시어게임</title>
 <style>
 :root{
   --ink:#1D1642; --sub:#6b6790; --bg:#EEEAFF;
@@ -619,7 +619,7 @@ function viewNickname() {
   const editing = !!S.nickname;
   const head = editing
     ? `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">프로필 수정</h2></div><div class="gap"></div>`
-    : `<div class="hero"><div class="hero-card">?</div><h1 class="title">이마<br>제시어<br>게임</h1></div>`;
+    : `<div class="hero"><div class="hero-card">?</div><h1 class="title">제시어<br>게임</h1></div>`;
   return `${head}
   <div class="card"><h2>${editing ? '내 프로필' : '프로필을 만들어요'}</h2><p class="sub">캐릭터를 고르고 이름을 적어 주세요. 친구들에게 이렇게 보여요. 나중에 바꿀 수 있어요.</p>
   ${avPicker(S.form.av)}
@@ -636,7 +636,7 @@ function viewHome() {
   const list = S.publicRooms.filter(r => (r.status === 'lobby' || r.status === 'playing') && (r.playerCount || 0) > 0 && (r.playerCount || 0) < (r.maxPlayers || 99)
     && !publicEntryStale(r))
     .sort((a, b) => ((a.status === 'playing') - (b.status === 'playing')) || ((b.createdAt || 0) - (a.createdAt || 0)));
-  return `<div class="hero"><div class="hero-card">?</div><h1 class="title">이마<br>제시어<br>게임</h1>
+  return `<div class="hero"><div class="hero-card">?</div><h1 class="title">제시어<br>게임</h1>
     <p class="tag">내 이마에 붙은 말, 나만 모른다!</p></div>
   <div class="me-chip">${avatar(S.nickname, S.uid)}<div class="grow"><b>${esc(S.nickname)}</b><div class="sub">게스트 프로필</div></div>
     <button class="btn small" data-act="editName">프로필 수정</button></div>
@@ -1567,7 +1567,7 @@ const Actions = {
   },
   async share() {
     const link = roomLink(S.room.code);
-    if (navigator.share) { try { await navigator.share({ title: '제시어게임(양세찬게임)', text: `방 코드 ${S.room.code}`, url: link }); } catch (e) {} }
+    if (navigator.share) { try { await navigator.share({ title: '제시어게임', text: `방 코드 ${S.room.code}`, url: link }); } catch (e) {} }
     else Actions.copyLink();
   },
   showQR() { S.showQR = true; render(); },
