@@ -2,22 +2,22 @@
   "appId": "com.sunho.yangsechan",
   "appName": "제시어게임",
   "webDir": "www",
-  "backgroundColor": "#EEEAFF",
+  "backgroundColor": "#5B2FE0",
   "android": {
-    "backgroundColor": "#EEEAFF",
+    "backgroundColor": "#5B2FE0",
     "allowMixedContent": false
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 500,
-      "backgroundColor": "#EEEAFF",
+      "backgroundColor": "#5B2FE0",
       "androidSplashResourceName": "splash",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false
     },
     "StatusBar": {
-      "style": "DARK",
-      "backgroundColor": "#EEEAFF"
+      "style": "LIGHT",
+      "backgroundColor": "#5B2FE0"
     }
   }
 }
