@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_RELEASE_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - name: 코드 받아오기
         uses: actions/checkout@v4
@@ -52,7 +54,7 @@ jobs:
 
       # ---- 아래부터는 릴리즈 서명 키가 GitHub Secrets에 등록되어 있을 때만 실행됨 ----
       - name: 서명 키 복원 (secrets에 등록된 경우에만)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_RELEASE_KEY == 'true' }}
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -68,17 +70,17 @@ jobs:
           EOF
 
       - name: 릴리즈 AAB 빌드 (스토어 업로드용)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_RELEASE_KEY == 'true' }}
         working-directory: android
         run: ./gradlew bundleRelease --no-daemon --stacktrace
 
       - name: 릴리즈 APK 빌드 (직접 설치 테스트용)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_RELEASE_KEY == 'true' }}
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: 릴리즈 AAB 업로드
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_RELEASE_KEY == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
@@ -86,7 +88,7 @@ jobs:
           if-no-files-found: error
 
       - name: 릴리즈 APK 업로드
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_RELEASE_KEY == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
