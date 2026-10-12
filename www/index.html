@@ -659,19 +659,19 @@ function viewHome() {
     <button class="btn small" data-act="editName">프로필 수정</button></div>
   <div class="tiles"><button class="tile t-create" data-act="goCreate"><span class="ti"><svg width="34" height="30" viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="6" y="20" width="30" height="22" rx="6" transform="rotate(-13 21 31)" fill="#FFFFFF" opacity="0.45"/><rect x="14" y="14" width="30" height="22" rx="6" transform="rotate(7 29 25)" fill="#FFFFFF"/><g transform="rotate(7 29 25)" stroke="#ECE6FB" stroke-width="2.2" stroke-linecap="round"><path d="M18 33 h22"/></g><circle cx="48" cy="12" r="11" fill="#FFC93C"/><g stroke="#5B2FE0" stroke-width="2.6" stroke-linecap="round"><path d="M48 7 v10"/><path d="M43 12 h10"/></g></svg></span>방 만들기</button>
     <button class="tile t-join" data-act="goJoin"><span class="ti"><svg width="34" height="30" viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="10" y="12" width="44" height="32" rx="9" fill="#FFFFFF"/><circle cx="10" cy="28" r="4.5" fill="#FFDCC2"/><circle cx="54" cy="28" r="4.5" fill="#FFDCC2"/><circle cx="34" cy="28" r="12" fill="#5B2FE0"/><path d="M30 21 L40 28 L30 35" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>들어가기</button></div>
-  <button class="help-btn" data-act="showHelp">📖 처음이세요? 이용방법 보기</button>
+  <button class="help-btn" data-act="showHelp"><svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.2C6.8 3.2 5 2.8 2.4 2.8v9.4c2.6 0 4.4.4 5.6 1.4 1.2-1 3-1.4 5.6-1.4V2.8c-2.6 0-4.4.4-5.6 1.4z"/><path d="M8 4.2v9.4"/></svg>처음이세요? 이용방법 보기</button>
   <div class="card"><h2>지금 열린 공개방</h2>
   ${list.some(r => r.status === 'playing') ? '<p class="sub" style="margin:-6px 0 8px">게임 중인 방은 👀 관전만 할 수 있어요.</p>' : ''}
   ${list.length ? list.map(r => `<div class="pub"><div class="grow"><b>${esc(r.hostName)}</b>님의 방
-    <div class="row wrap" style="gap:6px;margin-top:4px"><span class="badge ${r.status === 'playing' ? 'p' : 'm'}">${r.status === 'playing' ? '🎮 게임 중' : '⏳ 대기 중'}</span><span class="badge v">${esc(categoryLabel(r.category))}</span>
-    <span class="badge">${r.chatMode === 'free' ? '💬 자유채팅' : '📏 일반'}</span><span class="badge g">👥 ${r.playerCount}/${r.maxPlayers}</span></div></div>
-    ${r.status === 'playing' ? `<button class="btn small lemon" data-act="joinPublic" data-code="${r.code}">👀 관전</button>` : `<button class="btn small mint" data-act="joinPublic" data-code="${r.code}">입장</button>`}</div>`).join('')
+    <div class="row wrap" style="gap:6px;margin-top:4px"><span class="badge ${r.status === 'playing' ? 'p' : 'm'}">${r.status === 'playing' ? '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M6.6 5.4L11 8l-4.4 2.6z" fill="currentColor" stroke="none"/></svg>게임 중' : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.8V8l2.4 1.6"/></svg>대기 중'}</span><span class="badge v">${esc(categoryLabel(r.category))}</span>
+    <span class="badge">${r.chatMode === 'free' ? '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.6h10a1 1 0 0 1 1 1V10a1 1 0 0 1-1 1H7.2L4.4 13.4V11H3a1 1 0 0 1-1-1V5.6a1 1 0 0 1 1-1z"/></svg>자유채팅' : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 4.5h7M6 8h7M6 11.5h7"/><circle cx="2.6" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="2.6" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="2.6" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>일반'}</span><span class="badge g"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="6" r="2.1"/><path d="M1.8 13c0-2.3 1.7-3.8 3.8-3.8S9.4 10.7 9.4 13"/><circle cx="11.2" cy="6.3" r="1.7"/><path d="M11 9.3c1.8.2 3 1.5 3 3.7"/></svg>${r.playerCount}/${r.maxPlayers}</span></div></div>
+    ${r.status === 'playing' ? `<button class="btn small lemon" data-act="joinPublic" data-code="${r.code}"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8S4 3.6 8 3.6 14.5 8 14.5 8 12 12.4 8 12.4 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>관전</button>` : `<button class="btn small mint" data-act="joinPublic" data-code="${r.code}">입장</button>`}</div>`).join('')
     : '<div class="empty">🕊️<br>열려 있는 공개방이 없어요.<br>직접 방을 만들어 보세요!</div>'}</div>
   <p class="sub center" style="margin-top:10px">${LEGAL_LINKS}</p>`;
 }
 function viewJoin() {
   return `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">방 들어가기</h2></div><div class="gap"></div>
-  <div class="card"><button class="btn lemon block huge" data-act="scanQR">📷 QR로 들어가기</button>
+  <div class="card"><button class="btn lemon block huge" data-act="scanQR"><svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="1.6" y="1.6" width="4.2" height="4.2" rx="0.8"/><rect x="10.2" y="1.6" width="4.2" height="4.2" rx="0.8"/><rect x="1.6" y="10.2" width="4.2" height="4.2" rx="0.8"/><path d="M10.2 10.2h1.8v1.8h-1.8zM13 10.2h1.4M10.2 13.4h1.6M13.4 12.6v1.8"/></svg>QR로 들어가기</button>
   <div class="or">또는 코드로 입력</div>
   <label class="f" for="jc">방 코드 ${CODE_LEN}자리</label>
   <input id="jc" class="code" data-model="joinCode" data-upper="1" maxlength="${CODE_LEN}" value="${esc(S.form.joinCode)}" placeholder="ABC123" autocomplete="off" autocapitalize="characters">
@@ -682,11 +682,11 @@ function viewCreate() {
   const c = S.form.create, online = c.mode === 'online';
   return `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">방 만들기</h2></div><div class="gap"></div>
   <div class="card">
-  <label class="f">게임 방식</label>${seg('mode', c.mode, [['online', '🌐 온라인'], ['same', '👥 같은 공간']])}
+  <label class="f">게임 방식</label>${seg('mode', c.mode, [['online', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2.2 2 2.2 10.4 0 12.4M8 1.8c-2.2 2-2.2 10.4 0 12.4"/></svg>온라인'], ['same', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="6" r="2.1"/><path d="M1.8 13c0-2.3 1.7-3.8 3.8-3.8S9.4 10.7 9.4 13"/><circle cx="11.2" cy="6.3" r="1.7"/><path d="M11 9.3c1.8.2 3 1.5 3 3.7"/></svg>같은 공간']])}
   <p class="sub" style="margin-top:6px">${online ? '멀리 있어도 채팅으로 질문하고 답해요.' : '한자리에 모여서 폰을 이마에 대고 해요.'}</p>
-  ${online ? `<label class="f">공개 설정</label>${seg('visibility', c.visibility, [['public', '🔓 공개방'], ['private', '🔒 비공개방']])}
+  ${online ? `<label class="f">공개 설정</label>${seg('visibility', c.visibility, [['public', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="7.2" width="9.2" height="6.6" rx="1.6"/><path d="M5.4 7.2V5a2.6 2.6 0 0 1 4.8-1.4"/></svg>공개방'], ['private', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="7.2" width="9.2" height="6.6" rx="1.6"/><path d="M5.4 7.2V5.4a2.6 2.6 0 0 1 5.2 0v1.8"/></svg>비공개방']])}
   <p class="sub" style="margin-top:6px">${c.visibility === 'public' ? '누구나 목록에서 볼 수 있어요.' : '코드·링크·QR로만 들어올 수 있어요.'}</p>
-  <label class="f">채팅 방식</label>${seg('chatMode', c.chatMode, [['normal', '📏 일반모드'], ['free', '💬 자유채팅']])}
+  <label class="f">채팅 방식</label>${seg('chatMode', c.chatMode, [['normal', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 4.5h7M6 8h7M6 11.5h7"/><circle cx="2.6" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="2.6" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="2.6" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>일반모드'], ['free', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.6h10a1 1 0 0 1 1 1V10a1 1 0 0 1-1 1H7.2L4.4 13.4V11H3a1 1 0 0 1-1-1V5.6a1 1 0 0 1 1-1z"/></svg>자유채팅']])}
   <p class="sub" style="margin-top:6px">${c.chatMode === 'free' ? '질문·답변 제한 없이 자유롭게 (경고, 정답 시도는 가능)' : '질문·답변 순서와 횟수 규칙이 적용돼요.'}</p>
   ${c.chatMode === 'normal' ? `<label class="f">채팅 입력 제한시간</label>${seg('chatLimit', c.chatLimit, [[0, '무제한'], [60, '1분'], [120, '2분'], [180, '3분']])}` : ''}` : ''}
   <label class="f">최대 인원</label>${seg('maxPlayers', c.maxPlayers, [[2, '2'], [4, '4'], [6, '6'], [8, '8']])}
@@ -739,8 +739,8 @@ function viewLobby() {
       ${p.wish ? `<span class="badge">희망: ${esc(p.wish)}</span>` : ''}
       ${online && p.id !== m.hostId ? (p.ready ? '<span class="badge m">준비 완료</span>' : '<span class="badge g">준비 전</span>') : ''}
       ${p.id !== me ? `<div class="row wrap" style="gap:6px;margin-top:4px">
-        <button class="btn small" data-act="openReport" data-uid="${p.id}" data-name="${esc(p.nickname)}">🚩 신고</button>
-        <button class="btn small" data-act="toggleBlock" data-uid="${p.id}" data-name="${esc(p.nickname)}">${isBlocked(p.id) ? '차단 해제' : '🚫 차단'}</button>
+        <button class="btn small" data-act="openReport" data-uid="${p.id}" data-name="${esc(p.nickname)}"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 2.2v11.6"/><path d="M3.6 3h7.2l-1.6 2 1.6 2H3.6z" fill="currentColor" stroke="none"/></svg>신고</button>
+        <button class="btn small" data-act="toggleBlock" data-uid="${p.id}" data-name="${esc(p.nickname)}">${isBlocked(p.id) ? '차단 해제' : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M3.8 3.8l8.4 8.4"/></svg>차단'}</button>
       </div>` : ''}</div></div>
       ${isHost && p.id !== me ? `<div style="display:flex;flex-direction:column;gap:6px">
         ${online ? `<button class="btn small" data-act="toggleMute" data-uid="${p.id}">${(r.muted || {})[p.id] ? '제한 해제' : '채팅 제한'}</button>` : ''}
@@ -749,7 +749,7 @@ function viewLobby() {
 
   ${online ? `<div class="card"><h2>채팅</h2><div class="chat" id="chatlog">
     ${r.chat.length ? r.chat.map(c => isBlocked(c.uid)
-        ? `<div class="msg sys">🚫 차단한 사용자의 메시지예요.</div>`
+        ? `<div class="msg sys">차단한 사용자의 메시지예요.</div>`
         : `<div class="msg ${c.uid === me ? 'me' : ''}">${c.uid === me ? '' : `<b>${esc(c.nickname)}</b><br>`}<span class="t">${esc(c.text)}</span></div>`).join('')
       : '<div class="empty">첫 메시지를 남겨 보세요.</div>'}</div>
     <div class="row" style="margin-top:8px"><input id="chatInput" data-model="chat" maxlength="${CHAT_MAX}" value="${esc(S.form.chat)}"
@@ -798,7 +798,7 @@ function ranking(r) {
   return { rows, pending, total };
 }
 function rankLabel(rank, total) {
-  if (total >= 2 && rank === total) return '🐢 꼴찌';
+  if (total >= 2 && rank === total) return '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌';
   return (['🥇 ', '🥈 ', '🥉 '][rank - 1] || '') + rank + '등';
 }
 function nameOf(r, id) {
@@ -859,16 +859,16 @@ function viewResult() {
   const rowHtml = d => `<div class="player ${d.id === me ? 'me' : ''} ${isLast(d) ? 'loser' : ''}"><span class="rank ${isLast(d) ? 'last' : ''}">${rankLabel(d.rank, total)}</span>
       ${avatar(nameOf(r, d.id), d.id)}<div class="grow"><b>${esc(nameOf(r, d.id))}</b>${meBadge(d.id)}
       <div class="sub">제시어: ${esc(d.word)}</div></div></div>`;
-  const pendRow = id => `<div class="player ${id === me ? 'me' : ''} loser"><span class="rank last">🐢 꼴찌</span>${avatar(nameOf(r, id), id)}
+  const pendRow = id => `<div class="player ${id === me ? 'me' : ''} loser"><span class="rank last"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌</span>${avatar(nameOf(r, id), id)}
       <div class="grow"><b>${esc(nameOf(r, id))}</b>${meBadge(id)}
       <div class="sub">${(r.game.left || {})[id] ? '중간에 나갔어요' : (m.mode === 'online' ? '마지막까지 못 맞혔어요' : '끝까지 못 맞혔어요')}${(m.mode === 'online' && id !== me && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div></div>`;
   const mine = rows.find(d => d.id === me);
   const meCard = (mine || pending.includes(me)) ? `<div class="mecard">${avatar(nameOf(r, me), me)}
-    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '🐢 꼴찌'}</div>${mine ? `<div class="sub">제시어: ${esc(mine.word)}</div>` : ''}</div></div>` : '';
+    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌'}</div>${mine ? `<div class="sub">제시어: ${esc(mine.word)}</div>` : ''}</div></div>` : '';
   return `<div class="center"><h1 class="title sm">결과 발표!</h1></div>
     ${meCard}
     <div class="podium">${[1, 0, 2].map(pod).join('')}</div>
-    ${(rows.length || pending.length) ? `<div class="card" style="padding-top:6px;padding-bottom:12px"><h2 style="margin-top:10px">🏆 전체 순위</h2>${rows.map(rowHtml).join('')}${pending.map(pendRow).join('')}</div>` : ''}
+    ${(rows.length || pending.length) ? `<div class="card" style="padding-top:6px;padding-bottom:12px"><h2 style="margin-top:10px"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h6v3.4a3 3 0 0 1-6 0V3z"/><path d="M5 4H2.8c0 2 1 3 2.6 3.2M11 4h2.2c0 2-1 3-2.6 3.2"/><path d="M8 9.4V12M5.6 13.6h4.8M6 12h4"/></svg>전체 순위</h2>${rows.map(rowHtml).join('')}${pending.map(pendRow).join('')}</div>` : ''}
     ${newBox}
     ${isHost ? `<div class="row"><button class="btn primary grow huge" data-act="rematch">한 판 더</button>
       <button class="btn grow huge" data-act="backToLobby">대기실로</button></div>`
@@ -1126,21 +1126,21 @@ function updateTimer() {
   const st = onlineState(r); if (st.phase !== 'normal') return;
   const ti = timerInfo(r, st);
   el.textContent = ti.text;
-  const lb = document.getElementById('tlabel'); if (lb) lb.textContent = '⏱ ' + ti.label;
+  const lb = document.getElementById('tlabel'); if (lb) lb.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="5.6"/><path d="M8 9V6.2M6 1.6h4M8 1.6v1.4"/></svg>' + ti.label;
   const f = document.getElementById('tfill'); if (f) { f.style.width = ti.pct + '%'; f.classList.toggle('low', ti.low); }
 }
 
 function gameMsg(r, c) {
   if (c.kind === 'sys') return `<div class="msg sys">${esc(c.text)}</div>`;
-  if (isBlocked(c.uid)) return `<div class="msg sys">🚫 차단한 사용자의 메시지예요.</div>`;
+  if (isBlocked(c.uid)) return `<div class="msg sys">차단한 사용자의 메시지예요.</div>`;
   const mine = c.uid === S.uid, rep = (r.reports || {})[c.id] || {}, cnt = Object.keys(rep).length;
-  const tag = { q: '❓ 질문', a: '💬 답변', guess: '🎯 정답 시도' }[c.kind] || '';
+  const tag = { q: '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.6h10a1 1 0 0 1 1 1V10a1 1 0 0 1-1 1H7.2L4.4 13.4V11H3a1 1 0 0 1-1-1V5.6a1 1 0 0 1 1-1z"/></svg>질문', a: '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.6h10a1 1 0 0 1 1 1V10a1 1 0 0 1-1 1H7.2L4.4 13.4V11H3a1 1 0 0 1-1-1V5.6a1 1 0 0 1 1-1z"/></svg>답변', guess: '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.4"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/></svg>정답 시도' }[c.kind] || '';
   let extra = '';
   if (c.kind === 'guess') extra = c.invalid ? ' <span class="badge g">무효</span>' : c.correct === true ? ' <span class="badge m">정답!</span>' : c.correct === false ? ' <span class="badge p">오답</span>' : ' <span class="badge g">확인 중…</span>';
   const canWarn = (c.kind === 'a' || c.kind === 'free') && !mine && rosterIds(r).includes(S.uid);
-  const warn = canWarn ? ` <button class="btn small" data-act="report" data-id="${c.id}" ${rep[S.uid] ? 'disabled' : ''}>⚠ 경고${cnt ? ' ' + cnt : ''}</button>` : (cnt ? ` <span class="badge p">⚠ ${cnt}</span>` : '');
-  const flag = !mine ? ` <button class="btn small" data-act="openReport" data-uid="${c.uid}" data-name="${esc(c.nickname)}" data-text="${esc(c.text)}">🚩</button>
-    <button class="btn small" data-act="toggleBlock" data-uid="${c.uid}" data-name="${esc(c.nickname)}">${isBlocked(c.uid) ? '차단 해제' : '🚫'}</button>` : '';
+  const warn = canWarn ? ` <button class="btn small" data-act="report" data-id="${c.id}" ${rep[S.uid] ? 'disabled' : ''}><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4 14.4 13H1.6z"/><path d="M8 6.6v3"/><rect x="7.5" y="10.8" width="1" height="1.1" rx="0.3" fill="currentColor" stroke="none"/></svg>경고${cnt ? ' ' + cnt : ''}</button>` : (cnt ? ` <span class="badge p"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4 14.4 13H1.6z"/><path d="M8 6.6v3"/><rect x="7.5" y="10.8" width="1" height="1.1" rx="0.3" fill="currentColor" stroke="none"/></svg>${cnt}</span>` : '');
+  const flag = !mine ? ` <button class="btn small" data-act="openReport" data-uid="${c.uid}" data-name="${esc(c.nickname)}" data-text="${esc(c.text)}"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 2.2v11.6"/><path d="M3.6 3h7.2l-1.6 2 1.6 2H3.6z" fill="currentColor" stroke="none"/></svg></button>
+    <button class="btn small" data-act="toggleBlock" data-uid="${c.uid}" data-name="${esc(c.nickname)}">${isBlocked(c.uid) ? '차단 해제' : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M3.8 3.8l8.4 8.4"/></svg>'}</button>` : '';
   return `<div class="msg ${mine ? 'me' : ''}"><b>${esc(c.nickname)}</b> ${tag ? `<span class="badge">${tag}</span>` : ''}${extra}<br><span class="t">${esc(c.text)}</span>${warn}${flag}</div>`;
 }
 
@@ -1154,10 +1154,10 @@ function viewLiveResult() { // 관전 중에 잠깐 보는 '지금까지의 결�
     <div class="grow"><b>${esc(nameOf(r, id))}</b>${meBadge(id)}<div class="sub">${out ? '중간에 나갔어요' : '아직 맞히는 중…'}${(!out && id !== me && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div>
     ${out ? '<span class="badge p">나감</span>' : '<span class="badge g">진행 중</span>'}</div>`; };
   return `<div class="center"><h1 class="title sm">중간 결과</h1></div>
-    <div class="card"><h2>🏁 정답을 맞힌 순서</h2>${rows.length ? rows.map(rowHtml).join('') : '<div class="empty">아직 맞힌 사람이 없어요.</div>'}</div>
-    ${pending.length ? `<div class="card"><h2>🤔 아직 맞히는 중</h2>${pending.map(pendHtml).join('')}</div>` : ''}
+    <div class="card"><h2><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 2v12"/><path d="M3.4 3h8.4l-1.8 2.2 1.8 2.2H3.4z"/></svg>정답을 맞힌 순서</h2>${rows.length ? rows.map(rowHtml).join('') : '<div class="empty">아직 맞힌 사람이 없어요.</div>'}</div>
+    ${pending.length ? `<div class="card"><h2><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="currentColor"><circle cx="4" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/></svg>아직 맞히는 중</h2>${pending.map(pendHtml).join('')}</div>` : ''}
     <p class="sub center">게임이 끝나면 결과 화면으로 자동으로 이동해요.</p>
-    <button class="btn primary block huge" data-act="unpeek">👀 관전으로 돌아가기</button>`;
+    <button class="btn primary block huge" data-act="unpeek"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8S4 3.6 8 3.6 14.5 8 14.5 8 12 12.4 8 12.4 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>관전으로 돌아가기</button>`;
 }
 
 function viewOnline() {
@@ -1186,14 +1186,14 @@ function viewOnline() {
     const isMe = id === me, d = res[id], out = gone[id], row = rows.find(x => x.id === id);
     const word = isMe && !d ? '❓ 비공개' : (d ? d.word : (r.words[id] || '…'));
     const isQ = normal && id === st.qid && !d && !out;
-    const stt = d ? rankLabel(row ? row.rank : 0, total) : out ? '나감 (꼴찌)' : (isQ ? '🙋 질문자' : '');
+    const stt = d ? rankLabel(row ? row.rank : 0, total) : out ? '나감 (꼴찌)' : (isQ ? '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="6" r="2.1"/><path d="M1.8 13c0-2.3 1.7-3.8 3.8-3.8S9.4 10.7 9.4 13"/><circle cx="11.2" cy="6.3" r="1.7"/><path d="M11 9.3c1.8.2 3 1.5 3 3.7"/></svg>질문자' : '');
     return `<div class="pc ${isMe ? 'me' : ''} ${isQ && !isMe ? 'q' : ''} ${out ? 'gone' : ''}">${isMe ? '<span class="ribbon">나</span>' : ''}${avatar(nameOf(r, id), id)}
       <div class="nm">${esc(nameOf(r, id))}</div><div class="wd">${esc(word)}</div>
-      <div class="wr">⚠ 경고 ${warnCount(r, id)}</div><div class="stt">${stt}</div></div>`;
+      <div class="wr"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4 14.4 13H1.6z"/><path d="M8 6.6v3"/><rect x="7.5" y="10.8" width="1" height="1.1" rx="0.3" fill="currentColor" stroke="none"/></svg>경고 ${warnCount(r, id)}</div><div class="stt">${stt}</div></div>`;
   }).join('');
 
   const ti = normal ? timerInfo(r, st) : null;
-  const timerBar = ti ? `<div class="timerbar"><span class="tlabel" id="tlabel">⏱ ${ti.label}</span>
+  const timerBar = ti ? `<div class="timerbar"><span class="tlabel" id="tlabel"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="5.6"/><path d="M8 9V6.2M6 1.6h4M8 1.6v1.4"/></svg>${ti.label}</span>
       <div class="tbar"><i id="tfill" class="${ti.low ? 'low' : ''}" style="width:${ti.pct}%"></i></div><b class="tnum" id="tmr">${ti.text}</b></div>` : '';
   const canSend = S.guessMode ? st.canGuess : st.canChat;
   const ph = S.guessMode ? '내 제시어를 정확히 입력하세요' : canSend ? (normal ? (st.role === 'ask' ? '질문을 입력하세요 (1회)' : '답변을 입력하세요 (1회)') : '메시지 입력') : '지금은 채팅할 수 없어요';
@@ -1202,10 +1202,10 @@ function viewOnline() {
     : `<div class="row" style="margin-top:8px"><input id="gchat" data-model="gchat" maxlength="${CHAT_MAX}" value="${esc(S.form.gchat || '')}"
       placeholder="${ph}" ${canSend ? '' : 'disabled'} autocomplete="off">
       <button class="btn small primary" data-act="sendGame" ${canSend ? '' : 'disabled'}>${S.guessMode ? '정답 제출' : '보내기'}</button></div>
-    ${st.canGuess ? `<button class="btn small block ${S.guessMode ? 'lemon' : ''}" style="margin-top:8px" data-act="toggleGuess">🎯 ${S.guessMode ? '정답 시도 취소' : '정답 시도하기'}</button>` : ''}`;
+    ${st.canGuess ? `<button class="btn small block ${S.guessMode ? 'lemon' : ''}" style="margin-top:8px" data-act="toggleGuess"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.4"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/></svg>${S.guessMode ? '정답 시도 취소' : '정답 시도하기'}</button>` : ''}`;
   return `<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <div class="row wrap" style="gap:6px"><span class="badge v">${esc(categoryLabel(m.category))}</span>${specN ? `<span class="badge">👀 관전 ${specN}명</span>` : ''}</div>
-      <div class="row">${spectating ? '<button class="btn small lemon" data-act="peek">🏆 결과 보기</button>' : ''}<button class="btn small" data-act="leaveGame">나가기</button>
+      <div class="row wrap" style="gap:6px"><span class="badge v">${esc(categoryLabel(m.category))}</span>${specN ? `<span class="badge"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8S4 3.6 8 3.6 14.5 8 14.5 8 12 12.4 8 12.4 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>관전 ${specN}명</span>` : ''}</div>
+      <div class="row">${spectating ? '<button class="btn small lemon" data-act="peek"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h6v3.4a3 3 0 0 1-6 0V3z"/><path d="M5 4H2.8c0 2 1 3 2.6 3.2M11 4h2.2c0 2-1 3-2.6 3.2"/><path d="M8 9.4V12M5.6 13.6h4.8M6 12h4"/></svg>결과 보기</button>' : ''}<button class="btn small" data-act="leaveGame">나가기</button>
       ${isHost ? '<button class="btn small" data-act="endGame">게임 그만하기</button>' : ''}</div></div>
     <div class="strip">${cards}</div>
     <div class="banner">${banner}</div>
@@ -1221,14 +1221,14 @@ function viewRoom() {
 }
 function viewHelp() {
   return `<div class="modal" data-act="closeHelp"><div class="box help" data-act="noop"><div class="hb">
-    <h2>📖 이용방법</h2>
+    <h2><svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.2C6.8 3.2 5 2.8 2.4 2.8v9.4c2.6 0 4.4.4 5.6 1.4 1.2-1 3-1.4 5.6-1.4V2.8c-2.6 0-4.4.4-5.6 1.4z"/><path d="M8 4.2v9.4"/></svg>이용방법</h2>
     <div class="goal">🎯 내 이마의 제시어를 친구들보다 먼저 맞히면 승리! 내 제시어만 나는 몰라요.</div>
-    <h3>👥 같은 공간 (모여서 하기)</h3>
+    <h3><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="6" r="2.1"/><path d="M1.8 13c0-2.3 1.7-3.8 3.8-3.8S9.4 10.7 9.4 13"/><circle cx="11.2" cy="6.3" r="1.7"/><path d="M11 9.3c1.8.2 3 1.5 3 3.7"/></svg>같은 공간 (모여서 하기)</h3>
     <ol><li>방장이 방을 만들고, 코드·QR로 친구를 불러요.</li>
       <li>시작하면 폰을 <b>가로로</b> 돌려, 화면이 친구를 향하게 이마에 대요.</li>
       <li>친구들의 힌트로 맞히면 <b>정답!</b> 버튼을 눌러요.</li>
       <li>모두 맞히면 순위 발표. 마지막 한 명은 🐢 꼴찌!</li></ol>
-    <h3>🌐 온라인 (멀리서 하기)</h3>
+    <h3><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2.2 2 2.2 10.4 0 12.4M8 1.8c-2.2 2-2.2 10.4 0 12.4"/></svg>온라인 (멀리서 하기)</h3>
     <ol><li>방을 만들거나 공개방에 들어가요. 모두 <b>준비</b>를 누르면 방장이 시작해요.</li>
       <li><b>내 차례</b>(노란 화면)에는 내 제시어에 대해 질문을 딱 1개!</li>
       <li>다른 멤버(민트 화면)는 1번씩 답해요. 엉뚱한 답엔 <b>⚠ 경고</b>를 눌러요.</li>
@@ -1239,7 +1239,7 @@ function viewHelp() {
 function viewReport() {
   const t = S.reportTarget;
   return `<div class="modal" data-act="closeReport"><div class="box" data-act="noop" style="text-align:left;max-width:360px">
-    <h2>🚩 신고하기</h2>
+    <h2><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.6 2.2v11.6"/><path d="M3.6 3h7.2l-1.6 2 1.6 2H3.6z" fill="currentColor" stroke="none"/></svg>신고하기</h2>
     <p class="sub">"${esc(t.nickname || '상대')}"님을 신고해요. 사유를 선택해 주세요.</p>
     <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
       ${REPORT_REASONS.map(r => `<button class="btn" data-act="submitReport" data-reason="${esc(r)}">${esc(r)}</button>`).join('')}
