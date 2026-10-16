@@ -1747,6 +1747,8 @@ function handleBack() {
   if (S.showHelp) { S.showHelp = false; return render(); }
   if (document.querySelector('.scan')) return Scanner.close();
   if (S.screen === 'join' || S.screen === 'create') return go('home');
+  if (S.screen === 'catEdit') return Actions.backFromCatEdit();
+  if (S.screen === 'myCats') return Actions.backFromMyCats();
   if (S.screen === 'name' && S.nickname) return go('home'); // 프로필 수정 중 취소
   if (S.screen === 'room' && S.room && S.room.meta && S.room.meta.status === 'playing') return; // 게임 중엔 화면 안의 '나가기' 버튼으로만
   if (S.screen === 'room') return Actions.leave();
