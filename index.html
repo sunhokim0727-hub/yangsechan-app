@@ -86,9 +86,10 @@ p{margin:0 0 8px}
 .btn.block{display:block;width:100%}
 .btn.huge{padding:18px;font-size:18px;border-radius:20px}
 .btn[disabled]{opacity:.4;cursor:not-allowed}
-.btn:focus-visible,input:focus-visible,select:focus-visible,.tile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
-input,select{font:inherit;font-size:16px;width:100%;border:1px solid var(--line);border-radius:16px;padding:13px 15px;background:var(--surface-2);color:var(--ink);box-shadow:inset 0 1px 3px rgba(25,15,53,.05);transition:border-color .15s ease,box-shadow .15s ease}
-input::placeholder{color:#B4AFC9}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:16px;width:100%;border:1px solid var(--line);border-radius:16px;padding:13px 15px;background:var(--surface-2);color:var(--ink);box-shadow:inset 0 1px 3px rgba(25,15,53,.05);transition:border-color .15s ease,box-shadow .15s ease}
+textarea{resize:vertical;min-height:84px;line-height:1.45}
+input::placeholder,textarea::placeholder{color:#B4AFC9}
 input.code{font-family:var(--font-n);font-weight:700;font-size:28px;letter-spacing:7px;text-align:center;text-transform:uppercase;padding:15px 8px 15px 16px}
 label.f{display:block;font-weight:700;margin:14px 0 8px;font-size:13px;color:var(--sub);letter-spacing:.3px}
 .seg{display:flex;gap:8px;flex-wrap:wrap}
@@ -295,6 +296,8 @@ const CATEGORY_GROUPS = [
   { group: '기타', items: ['속담·사자성어', '예능 프로그램', '브랜드'] }
 ];
 const RANDOM_CATEGORY = 'random';
+const CUSTOM_CATEGORY = 'custom';
+const CUSTOM_WORDS_MIN = 8; // 커스텀 카테고리에 필요한 최소 단어 수 (최대 인원 8명 기준)
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자(0,O,1,I) 제외
 const CODE_LEN = 6;
 const NICK_MAX = 10;
@@ -309,7 +312,11 @@ function genCode() {
   for (let i = 0; i < CODE_LEN; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
   return s;
 }
-function categoryLabel(c) { return (!c || c === RANDOM_CATEGORY) ? '랜덤(전체)' : c; }
+function categoryLabel(c) { return (!c || c === RANDOM_CATEGORY) ? '랜덤(전체)' : c === CUSTOM_CATEGORY ? '커스텀(직접 입력)' : c; }
+// 쉼표/줄바꿈으로 구분된 텍스트를 단어 배열로 변환 (중복·공백 제거, 너무 긴 단어는 잘라냄)
+function parseCustomWords(text) {
+  return [...new Set((text || '').split(/[,\n]/).map(w => w.trim()).filter(Boolean).map(w => w.slice(0, 20)))];
+}
 function limitLabel(sec) { return sec ? (sec / 60) + '분' : '무제한'; }
 function newPlayer(nickname) {
   return { nickname, avatar: S.avatar || null, ready: false, wish: '', online: true, joinedAt: firebase.database.ServerValue.TIMESTAMP };
@@ -346,8 +353,9 @@ const WORDS = {
   '예능 프로그램': ['런닝맨','무한도전','1박 2일','놀면 뭐하니','나 혼자 산다','삼시세끼','전지적 참견 시점','아는 형님','신서유기','슈퍼맨이 돌아왔다','미운 우리 새끼','라디오스타','유 퀴즈 온 더 블록','복면가왕','나는 SOLO','지구오락실','스트릿 우먼 파이터','골 때리는 그녀들','피지컬: 100','대탈출','환승연애','강철부대','효리네 민박','꽃보다 할배','개그콘서트','쇼미더머니','프로듀스 101','불후의 명곡','패밀리가 떴다','해피선데이','황금어장','강심장','힐링캠프','무릎팍도사','세바퀴','해피투게더','진짜 사나이','정글의 법칙','윤식당','꽃보다 청춘','꽃보다 누나','스페인 하숙','어쩌다 사장','텐트 밖은 유럽','서진이네','아빠 어디가','금쪽같은 내 새끼','동상이몽','살림하는 남자들','편스토랑','백종원의 골목식당','냉장고를 부탁해','맛있는 녀석들','수요미식회','한국인의 밥상','생활의 달인','세상에 이런 일이','서프라이즈','놀라운 토요일','웃찾사','코미디빅리그','SNL 코리아','슈퍼스타K','K팝스타','보이스 코리아','팬텀싱어','미스트롯','미스터트롯','싱어게인','나는 가수다','히든싱어','고등래퍼','프로듀스 48','걸스플래닛','스트릿 맨 파이터','슈퍼밴드','뭉쳐야 찬다','최강야구','나는 자연인이다','다큐 3일','그것이 알고 싶다','도전 골든벨','스타킹','여고추리반','크라임씬','더 지니어스','피의 게임','데블스 플랜','솔로지옥','하트시그널','짝'],
   '브랜드': ['삼성','애플','나이키','아디다스','스타벅스','맥도날드','코카콜라','구글','유튜브','넷플릭스','카카오','네이버','쿠팡','배달의민족','토스','현대자동차','테슬라','디즈니','레고','이케아','무인양품','다이소','올리브영','롯데리아','배스킨라빈스','농심','오뚜기','에르메스','샤넬','루이비통','구찌','유니클로','노스페이스','엘지','현대','기아','SK','롯데','CJ','신세계','이마트','홈플러스','코스트코','GS25','CU','세븐일레븐','투썸플레이스','이디야','메가커피','빽다방','컴포즈커피','공차','파리바게뜨','뚜레쥬르','던킨','크리스피크림','서브웨이','버거킹','KFC','맘스터치','교촌치킨','BBQ','bhc','도미노피자','피자헛','파파존스','아웃백','빕스','애슐리','본죽','김밥천국','요기요','당근마켓','무신사','지그재그','컬리','오늘의집','야놀자','여기어때','에어비앤비','우버','카카오택시','티맵','다음','라인','트위터','인스타그램','페이스북','틱톡','디즈니플러스','왓챠','티빙','웨이브','스포티파이','멜론','지니','마이크로소프트','아마존','메타','인텔','엔비디아','소니','닌텐도','플레이스테이션','엑스박스','샤오미','화웨이','도요타','혼다','벤츠','BMW','아우디','폭스바겐','볼보','포르쉐','페라리','람보르기니','롤스로이스','푸마','뉴발란스','컨버스','반스','리바이스','자라','H&M','무지','아크테릭스','파타고니아','룰루레몬','프라다','디올','티파니','까르띠에','롤렉스','카시오','지샥','다이슨','필립스','발뮤다','쿠쿠','쿠첸','락앤락','이니스프리','라네즈','설화수','에스티로더','러쉬','롯데월드','에버랜드','캐리비안 베이','오리온','롯데제과','해태','크라운','빙그레','매일유업','서울우유','풀무원','동원','하림','백설','청정원','삼양','팔도']
 };
-function pickWords(category, n) {
-  const pool = (category && category !== RANDOM_CATEGORY && WORDS[category])
+function pickWords(category, n, customWords) {
+  const pool = category === CUSTOM_CATEGORY ? (customWords || []).slice()
+    : (category && category !== RANDOM_CATEGORY && WORDS[category])
     ? WORDS[category].slice() : [...new Set(Object.values(WORDS).flat())];
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   return pool.slice(0, n);
@@ -387,7 +395,7 @@ const Api = {
     const meta = {
       hostId: uid, hostName: nickname, mode: o.mode, visibility: o.visibility,
       chatMode: o.chatMode, chatLimit: o.chatLimit, maxPlayers: o.maxPlayers,
-      category: o.category, status: 'lobby', createdAt: this.TS(), lastSeen: this.TS(), lastActivity: this.TS()
+      category: o.category, customWords: o.customWords || null, status: 'lobby', createdAt: this.TS(), lastSeen: this.TS(), lastActivity: this.TS()
     };
     await this.R(`rooms/${code}/meta`).set(meta);
     await this.R(`rooms/${code}/players/${uid}`).set(newPlayer(nickname));
@@ -503,6 +511,7 @@ const Api = {
     await this.R(`rooms/${code}/meta/category`).set(cat);
     if (isPublic) await this.R(`publicRooms/${code}/category`).set(cat).catch(() => {});
   },
+  setCustomWords(code, words) { return this.R(`rooms/${code}/meta/customWords`).set(words); },
   async kick(code, target, isPublic) {
     await this.R(`rooms/${code}/kicked/${target}`).set(true);
     await this.R(`rooms/${code}/players/${target}`).remove();
@@ -527,7 +536,7 @@ const Api = {
   /* 게임 시작 / 다시 하기 (방장) : 제시어를 사람마다 하나씩 배정 */
   async startGame(code, meta, players) {
     const ids = Object.keys(players);
-    const words = pickWords(meta.category, ids.length);
+    const words = pickWords(meta.category, ids.length, meta.customWords);
     const online = meta.mode === 'online';
     const game = { startedAt: this.TS(), ended: false };
     game.players = Object.fromEntries(ids.map(id => [id, true])); // 이번 판 참가자 (나중에 들어온 사람은 관전자)
@@ -579,7 +588,7 @@ const Api = {
    ===================================================================== */
 const S = {
   uid: null, nickname: '', screen: 'boot',
-  form: { nickname: '', joinCode: '', chat: '', av: null,
+  form: { nickname: '', joinCode: '', chat: '', av: null, createCustomWords: '', lobbyCustomWords: '',
           create: { mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: RANDOM_CATEGORY } },
   avatar: null, avCache: {}, room: null, publicRooms: [], showQR: false, showHelp: false, busy: false, pendingCode: null, leaving: false,
   unsubRoom: null, unsubPublic: null, reportTarget: null
@@ -610,9 +619,10 @@ async function run(fn) {
   finally { S.busy = false; }
 }
 
-function categoryOptions(selected, withRandom, emptyLabel) {
+function categoryOptions(selected, withRandom, emptyLabel, allowCustom) {
   let h = '';
   if (withRandom) h += `<option value="${RANDOM_CATEGORY}" ${selected === RANDOM_CATEGORY ? 'selected' : ''}>랜덤(전체)</option>`;
+  if (allowCustom) h += `<option value="${CUSTOM_CATEGORY}" ${selected === CUSTOM_CATEGORY ? 'selected' : ''}>커스텀(직접 입력)</option>`;
   if (emptyLabel) h += `<option value="" ${!selected ? 'selected' : ''}>${emptyLabel}</option>`;
   CATEGORY_GROUPS.forEach(g => {
     h += `<optgroup label="${g.group}">` + g.items.map(i => `<option ${i === selected ? 'selected' : ''}>${i}</option>`).join('') + '</optgroup>';
@@ -682,6 +692,7 @@ function viewJoin() {
 }
 function viewCreate() {
   const c = S.form.create, online = c.mode === 'online';
+  const allowCustom = !online || c.visibility === 'private'; // 커스텀 카테고리는 비공개방·같은 공간에서만
   return `<div class="row"><button class="btn small" data-act="goHome">뒤로</button><h2 style="margin:0">방 만들기</h2></div><div class="gap"></div>
   <div class="card">
   <label class="f">게임 방식</label>${seg('mode', c.mode, [['online', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2.2 2 2.2 10.4 0 12.4M8 1.8c-2.2 2-2.2 10.4 0 12.4"/></svg>온라인'], ['same', '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.6" cy="6" r="2.1"/><path d="M1.8 13c0-2.3 1.7-3.8 3.8-3.8S9.4 10.7 9.4 13"/><circle cx="11.2" cy="6.3" r="1.7"/><path d="M11 9.3c1.8.2 3 1.5 3 3.7"/></svg>같은 공간']])}
@@ -693,7 +704,10 @@ function viewCreate() {
   ${c.chatMode === 'normal' ? `<label class="f">채팅 입력 제한시간</label>${seg('chatLimit', c.chatLimit, [[0, '무제한'], [60, '1분'], [120, '2분'], [180, '3분']])}` : ''}` : ''}
   <label class="f">최대 인원</label>${seg('maxPlayers', c.maxPlayers, [[2, '2'], [4, '4'], [6, '6'], [8, '8']])}
   <label class="f" for="ccat">제시어 카테고리</label>
-  <select id="ccat" data-change="setCreateCategory">${categoryOptions(c.category, true)}</select>
+  <select id="ccat" data-change="setCreateCategory">${categoryOptions(c.category, true, null, allowCustom)}</select>
+  ${!allowCustom ? `<p class="sub" style="margin-top:6px">커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.</p>` : ''}
+  ${c.category === CUSTOM_CATEGORY ? `<label class="f" for="ccw">단어 목록 <span class="sub">(쉼표 또는 줄바꿈 구분, 최소 ${CUSTOM_WORDS_MIN}개)</span></label>
+  <textarea id="ccw" data-model="createCustomWords" rows="4" placeholder="예: 삼겹살, 짜장면, 떡볶이, 비빔밥, ...">${esc(S.form.createCustomWords || '')}</textarea>` : ''}
   <div class="gap"></div><button class="btn primary block" data-act="createRoom">방 만들기</button></div>`;
 }
 
@@ -705,9 +719,12 @@ function viewLobby() {
   const players = sortedPlayers(r), mine = r.players[me] || {};
   const others = players.filter(p => p.id !== m.hostId);
   const allReady = others.every(p => p.ready);
-  const canStart = isHost && players.length >= 2 && (!online || allReady);
+  const customShort = m.category === CUSTOM_CATEGORY && (m.customWords || []).length < players.length;
+  const canStart = isHost && players.length >= 2 && (!online || allReady) && !customShort;
   let hint = '';
-  if (isHost) hint = players.length < 2 ? '2명 이상 모이면 시작할 수 있어요.' : (online && !allReady ? '모든 멤버가 준비를 눌러야 시작할 수 있어요.' : '');
+  if (isHost) hint = players.length < 2 ? '2명 이상 모이면 시작할 수 있어요.'
+    : customShort ? `커스텀 단어가 부족해요. 최소 ${players.length}개 필요해요. (현재 ${(m.customWords || []).length}개)`
+    : (online && !allReady ? '모든 멤버가 준비를 눌러야 시작할 수 있어요.' : '');
   const muted = !!(r.muted || {})[me];
   const link = roomLink(r.code);
 
@@ -726,7 +743,11 @@ function viewLobby() {
     <p class="sub center" style="margin:8px 0 0;word-break:break-all">${esc(link)}</p></div>
 
   <div class="card"><h2>제시어 카테고리</h2>
-    ${isHost ? `<select data-change="setCategory">${categoryOptions(m.category, true)}</select>`
+    ${isHost ? `<select data-change="setCategory">${categoryOptions(m.category, true, null, m.visibility === 'private')}</select>
+      ${m.visibility !== 'private' ? `<p class="sub" style="margin-top:6px">커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.</p>` : ''}
+      ${m.category === CUSTOM_CATEGORY ? `<label class="f" for="lcw">단어 목록 <span class="sub">(쉼표 또는 줄바꿈 구분, 최소 ${CUSTOM_WORDS_MIN}개, 현재 ${(m.customWords || []).length}개 저장됨)</span></label>
+      <textarea id="lcw" data-model="lobbyCustomWords" rows="4" placeholder="예: 삼겹살, 짜장면, 떡볶이, 비빔밥, ...">${esc(S.form.lobbyCustomWords || (m.customWords || []).join(', '))}</textarea>
+      <div class="gap"></div><button class="btn small" data-act="saveCustomWords">단어 목록 저장</button>` : ''}`
       : `<div><span class="badge v">${esc(categoryLabel(m.category))}</span> <span class="sub">방장이 정해요</span></div>`}
     <label class="f" for="wish">내가 원하는 카테고리 <span class="sub">(프로필에 표시)</span></label>
     <select id="wish" data-change="setWish">${categoryOptions(mine.wish || '', false, '선택 안 함')}</select></div>
@@ -1477,6 +1498,8 @@ const Actions = {
     const c = S.form.create; const v = /^\d+$/.test(d.val) ? Number(d.val) : d.val;
     c[d.key] = v;
     if (c.mode === 'same') { c.visibility = 'private'; c.chatMode = 'normal'; c.chatLimit = 0; }
+    const allowCustom = c.mode !== 'online' || c.visibility === 'private';
+    if (c.category === CUSTOM_CATEGORY && !allowCustom) { c.category = RANDOM_CATEGORY; toast('커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.'); }
     render();
   },
   createRoom() {
@@ -1484,6 +1507,14 @@ const Actions = {
       const c = { ...S.form.create };
       if (c.mode === 'same') { c.visibility = 'private'; c.chatMode = 'normal'; c.chatLimit = 0; }
       if (c.chatMode === 'free') c.chatLimit = 0;
+      if (c.category === CUSTOM_CATEGORY) {
+        const allowCustom = c.mode !== 'online' || c.visibility === 'private';
+        if (!allowCustom) throw new Error('커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.');
+        c.customWords = parseCustomWords(S.form.createCustomWords);
+        if (c.customWords.length < CUSTOM_WORDS_MIN) throw new Error(`커스텀 단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${c.customWords.length}개)`);
+      } else {
+        c.customWords = null;
+      }
       const code = await Api.createRoom(S.uid, S.nickname, c);
       enterRoom(code);
     });
@@ -1530,7 +1561,17 @@ const Actions = {
     if (!confirm(msg)) return;
     return Actions.leave();
   },
-  setCategory(v) { const r = S.room; return Api.setCategory(r.code, v, r.meta.visibility === 'public').catch(e => toast(e.message)); },
+  setCategory(v) {
+    const r = S.room;
+    if (v === CUSTOM_CATEGORY && r.meta.visibility !== 'private') return toast('커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.');
+    return Api.setCategory(r.code, v, r.meta.visibility === 'public').catch(e => toast(e.message));
+  },
+  saveCustomWords() {
+    const r = S.room; if (!r || r.meta.hostId !== S.uid) return;
+    const words = parseCustomWords(S.form.lobbyCustomWords || (r.meta.customWords || []).join(', '));
+    if (words.length < CUSTOM_WORDS_MIN) return toast(`커스텀 단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${words.length}개)`);
+    return Api.setCustomWords(r.code, words).then(() => toast('단어 목록을 저장했어요.')).catch(e => toast(e.message));
+  },
   setWish(v) { return Api.setWish(S.room.code, S.uid, v).catch(e => toast(e.message)); },
   setCreateCategory(v) { S.form.create.category = v; },
   toggleReady() { const me = S.room.players[S.uid] || {}; return Api.setReady(S.room.code, S.uid, !me.ready).catch(e => toast(e.message)); },
@@ -1562,6 +1603,10 @@ const Actions = {
   start() {
     return run(async () => {
       const r = S.room; if (r.meta.hostId !== S.uid) return;
+      if (r.meta.category === CUSTOM_CATEGORY) {
+        const n = Object.keys(r.players).length, have = (r.meta.customWords || []).length;
+        if (have < n) throw new Error(`커스텀 단어가 부족해요. 최소 ${n}개 필요해요. (현재 ${have}개) 카테고리에서 단어 목록을 저장해 주세요.`);
+      }
       await Api.startGame(r.code, r.meta, r.players);
     });
   },
