@@ -298,6 +298,9 @@ const CATEGORY_GROUPS = [
 const RANDOM_CATEGORY = 'random';
 const CUSTOM_CATEGORY = 'custom';
 const CUSTOM_WORDS_MIN = 8; // 커스텀 카테고리에 필요한 최소 단어 수 (최대 인원 8명 기준)
+const CAT_NAME_MAX = 16;    // 내가 만든 카테고리 이름 최대 글자 수
+const isCustomChoice = v => typeof v === 'string' && v.indexOf('custom:') === 0; // 방만들기/대기실 select 값 (저장된 카테고리 선택)
+const customChoiceId = v => v.slice(7);
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자(0,O,1,I) 제외
 const CODE_LEN = 6;
 const NICK_MAX = 10;
@@ -312,7 +315,7 @@ function genCode() {
   for (let i = 0; i < CODE_LEN; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
   return s;
 }
-function categoryLabel(c) { return (!c || c === RANDOM_CATEGORY) ? '랜덤(전체)' : c === CUSTOM_CATEGORY ? '커스텀(직접 입력)' : c; }
+function categoryLabel(c, customName) { return (!c || c === RANDOM_CATEGORY) ? '랜덤(전체)' : c === CUSTOM_CATEGORY ? (customName || '커스텀') : c; }
 // 쉼표/줄바꿈으로 구분된 텍스트를 단어 배열로 변환 (중복·공백 제거, 너무 긴 단어는 잘라냄)
 function parseCustomWords(text) {
   return [...new Set((text || '').split(/[,\n]/).map(w => w.trim()).filter(Boolean).map(w => w.slice(0, 20)))];
@@ -395,7 +398,8 @@ const Api = {
     const meta = {
       hostId: uid, hostName: nickname, mode: o.mode, visibility: o.visibility,
       chatMode: o.chatMode, chatLimit: o.chatLimit, maxPlayers: o.maxPlayers,
-      category: o.category, customWords: o.customWords || null, status: 'lobby', createdAt: this.TS(), lastSeen: this.TS(), lastActivity: this.TS()
+      category: o.category, customWords: o.customWords || null, customCategoryName: o.customCategoryName || null,
+      status: 'lobby', createdAt: this.TS(), lastSeen: this.TS(), lastActivity: this.TS()
     };
     await this.R(`rooms/${code}/meta`).set(meta);
     await this.R(`rooms/${code}/players/${uid}`).set(newPlayer(nickname));
@@ -507,11 +511,24 @@ const Api = {
   /* 대기실 동작 */
   setReady(code, uid, v) { return this.R(`rooms/${code}/players/${uid}/ready`).set(!!v); },
   setWish(code, uid, v) { return this.R(`rooms/${code}/players/${uid}/wish`).set(v || ''); },
-  async setCategory(code, cat, isPublic) {
-    await this.R(`rooms/${code}/meta/category`).set(cat);
-    if (isPublic) await this.R(`publicRooms/${code}/category`).set(cat).catch(() => {});
+  async setCategory(code, resolved, isPublic) {
+    await this.db.ref().update({
+      [`rooms/${code}/meta/category`]: resolved.category,
+      [`rooms/${code}/meta/customWords`]: resolved.customWords || null,
+      [`rooms/${code}/meta/customCategoryName`]: resolved.customCategoryName || null
+    });
+    if (isPublic) await this.R(`publicRooms/${code}/category`).set(resolved.category).catch(() => {});
   },
-  setCustomWords(code, words) { return this.R(`rooms/${code}/meta/customWords`).set(words); },
+  /* 내가 만든 카테고리 (프로필에 저장, 비공개방·같은 공간 모드에서만 사용) */
+  newId() { return this.db.ref().push().key; },
+  saveCategory(uid, id, data) { return this.R(`users/${uid}/customCategories/${id}`).set(data); },
+  deleteCategory(uid, id) { return this.R(`users/${uid}/customCategories/${id}`).remove(); },
+  watchMyCategories(uid, cb) {
+    const ref = this.R(`users/${uid}/customCategories`);
+    const fn = s => cb(s.val() || {});
+    ref.on('value', fn, () => cb({}));
+    return () => ref.off('value', fn);
+  },
   async kick(code, target, isPublic) {
     await this.R(`rooms/${code}/kicked/${target}`).set(true);
     await this.R(`rooms/${code}/players/${target}`).remove();
@@ -587,11 +604,11 @@ const Api = {
    3. 화면 상태 + 화면 그리기
    ===================================================================== */
 const S = {
-  uid: null, nickname: '', screen: 'boot',
-  form: { nickname: '', joinCode: '', chat: '', av: null, createCustomWords: '', lobbyCustomWords: '',
+  uid: null, nickname: '', screen: 'boot', myCats: {}, catsReturnTo: 'home',
+  form: { nickname: '', joinCode: '', chat: '', av: null, catId: null, catName: '', catWordsText: '',
           create: { mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: RANDOM_CATEGORY } },
   avatar: null, avCache: {}, room: null, publicRooms: [], showQR: false, showHelp: false, busy: false, pendingCode: null, leaving: false,
-  unsubRoom: null, unsubPublic: null, reportTarget: null
+  unsubRoom: null, unsubPublic: null, unsubMyCats: null, reportTarget: null
 };
 
 const $app = document.getElementById('app');
@@ -622,12 +639,27 @@ async function run(fn) {
 function categoryOptions(selected, withRandom, emptyLabel, allowCustom) {
   let h = '';
   if (withRandom) h += `<option value="${RANDOM_CATEGORY}" ${selected === RANDOM_CATEGORY ? 'selected' : ''}>랜덤(전체)</option>`;
-  if (allowCustom) h += `<option value="${CUSTOM_CATEGORY}" ${selected === CUSTOM_CATEGORY ? 'selected' : ''}>커스텀(직접 입력)</option>`;
+  if (allowCustom) {
+    const cats = Object.entries(S.myCats || {});
+    if (cats.length) {
+      h += `<optgroup label="내 카테고리">` + cats.map(([id, cat]) =>
+        `<option value="custom:${id}" ${selected === 'custom:' + id ? 'selected' : ''}>${esc(cat.name)} (${(cat.words || []).length})</option>`).join('') + '</optgroup>';
+    }
+  }
   if (emptyLabel) h += `<option value="" ${!selected ? 'selected' : ''}>${emptyLabel}</option>`;
   CATEGORY_GROUPS.forEach(g => {
     h += `<optgroup label="${g.group}">` + g.items.map(i => `<option ${i === selected ? 'selected' : ''}>${i}</option>`).join('') + '</optgroup>';
   });
   return h;
+}
+// 방만들기/대기실 select 값(랜덤/내장 카테고리/내가 만든 카테고리 id)을 방 meta에 저장할 형태로 변환
+function resolveCategoryChoice(v) {
+  if (isCustomChoice(v)) {
+    const cat = (S.myCats || {})[customChoiceId(v)];
+    if (!cat) return null;
+    return { category: CUSTOM_CATEGORY, customWords: (cat.words || []).slice(), customCategoryName: cat.name };
+  }
+  return { category: v, customWords: null, customCategoryName: null };
 }
 const seg = (key, val, opts) => `<div class="seg">${opts.map(([v, l]) =>
   `<button data-act="setCreate" data-key="${key}" data-val="${v}" class="${String(val) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
@@ -672,6 +704,7 @@ function viewHome() {
   <div class="tiles"><button class="tile t-create" data-act="goCreate"><span class="ti"><svg width="34" height="30" viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="6" y="20" width="30" height="22" rx="6" transform="rotate(-13 21 31)" fill="#FFFFFF" opacity="0.45"/><rect x="14" y="14" width="30" height="22" rx="6" transform="rotate(7 29 25)" fill="#FFFFFF"/><g transform="rotate(7 29 25)" stroke="#ECE6FB" stroke-width="2.2" stroke-linecap="round"><path d="M18 33 h22"/></g><circle cx="48" cy="12" r="11" fill="#FFC93C"/><g stroke="#5B2FE0" stroke-width="2.6" stroke-linecap="round"><path d="M48 7 v10"/><path d="M43 12 h10"/></g></svg></span>방 만들기</button>
     <button class="tile t-join" data-act="goJoin"><span class="ti"><svg width="34" height="30" viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="10" y="12" width="44" height="32" rx="9" fill="#FFFFFF"/><circle cx="10" cy="28" r="4.5" fill="#FFDCC2"/><circle cx="54" cy="28" r="4.5" fill="#FFDCC2"/><circle cx="34" cy="28" r="12" fill="#5B2FE0"/><path d="M30 21 L40 28 L30 35" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>들어가기</button></div>
   <button class="help-btn" data-act="showHelp"><svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.2C6.8 3.2 5 2.8 2.4 2.8v9.4c2.6 0 4.4.4 5.6 1.4 1.2-1 3-1.4 5.6-1.4V2.8c-2.6 0-4.4.4-5.6 1.4z"/><path d="M8 4.2v9.4"/></svg>처음이세요? 이용방법 보기</button>
+  <button class="help-btn" data-act="goMyCats" data-from="home" style="margin-top:-14px"><svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:-3px;margin-right:4px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4.4" width="12" height="9.2" rx="1.6"/><path d="M2 6.6h12"/></svg>내가 만든 카테고리 관리</button>
   <div class="card"><h2>지금 열린 공개방</h2>
   ${list.some(r => r.status === 'playing') ? '<p class="sub" style="margin:-6px 0 8px">게임 중인 방은 👀 관전만 할 수 있어요.</p>' : ''}
   ${list.length ? list.map(r => `<div class="pub"><div class="grow"><b>${esc(r.hostName)}</b>님의 방
@@ -705,10 +738,36 @@ function viewCreate() {
   <label class="f">최대 인원</label>${seg('maxPlayers', c.maxPlayers, [[2, '2'], [4, '4'], [6, '6'], [8, '8']])}
   <label class="f" for="ccat">제시어 카테고리</label>
   <select id="ccat" data-change="setCreateCategory">${categoryOptions(c.category, true, null, allowCustom)}</select>
-  ${!allowCustom ? `<p class="sub" style="margin-top:6px">커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.</p>` : ''}
-  ${c.category === CUSTOM_CATEGORY ? `<label class="f" for="ccw">단어 목록 <span class="sub">(쉼표 또는 줄바꿈 구분, 최소 ${CUSTOM_WORDS_MIN}개)</span></label>
-  <textarea id="ccw" data-model="createCustomWords" rows="4" placeholder="예: 삼겹살, 짜장면, 떡볶이, 비빔밥, ...">${esc(S.form.createCustomWords || '')}</textarea>` : ''}
+  ${allowCustom
+    ? `<div class="row" style="justify-content:space-between;align-items:center;margin-top:8px">
+      <p class="sub" style="margin:0">${Object.keys(S.myCats || {}).length ? '내가 만든 카테고리를 고를 수 있어요.' : '아직 만든 카테고리가 없어요.'}</p>
+      <button class="btn small" data-act="goMyCats" data-from="create">카테고리 관리</button></div>`
+    : `<p class="sub" style="margin-top:6px">내가 만든 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.</p>`}
   <div class="gap"></div><button class="btn primary block" data-act="createRoom">방 만들기</button></div>`;
+}
+
+function viewMyCats() {
+  const cats = Object.entries(S.myCats || {}).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
+  return `<div class="row" style="justify-content:space-between"><h2 style="margin:0">내 카테고리</h2>
+    <button class="btn small" data-act="backFromMyCats">뒤로</button></div><div class="gap"></div>
+  <div class="card"><p class="sub" style="margin:0 0 10px">직접 만든 단어 목록으로 게임할 수 있어요. 비공개방·같은 공간 모드에서만 쓸 수 있어요.</p>
+  <button class="btn primary block" data-act="goCatNew">+ 새 카테고리 만들기</button></div>
+  ${cats.length ? cats.map(([id, cat]) => `<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div class="grow"><b>${esc(cat.name)}</b><div class="sub" style="margin-top:2px">단어 ${(cat.words || []).length}개</div></div>
+    <div class="row" style="gap:6px"><button class="btn small" data-act="goCatEdit" data-id="${id}">수정</button>
+    <button class="btn small danger" data-act="deleteCat" data-id="${id}">삭제</button></div></div></div>`).join('')
+    : '<div class="empty">🗂️<br>아직 만든 카테고리가 없어요.</div>'}`;
+}
+function viewCatEdit() {
+  const editing = !!S.form.catId;
+  return `<div class="row" style="justify-content:space-between"><h2 style="margin:0">${editing ? '카테고리 수정' : '새 카테고리 만들기'}</h2>
+    <button class="btn small" data-act="backFromCatEdit">뒤로</button></div><div class="gap"></div>
+  <div class="card">
+  <label class="f" for="catName">카테고리 이름 (최대 ${CAT_NAME_MAX}글자)</label>
+  <input id="catName" data-model="catName" maxlength="${CAT_NAME_MAX}" value="${esc(S.form.catName || '')}" placeholder="예: 우리 가족 밈" autocomplete="off">
+  <label class="f" for="catWords">단어 목록 <span class="sub">(쉼표 또는 줄바꿈 구분, 최소 ${CUSTOM_WORDS_MIN}개)</span></label>
+  <textarea id="catWords" data-model="catWordsText" rows="6" placeholder="예: 삼겹살, 짜장면, 떡볶이, 비빔밥, ...">${esc(S.form.catWordsText || '')}</textarea>
+  <div class="gap"></div><button class="btn primary block" data-act="saveCat">저장</button></div>`;
 }
 
 function sortedPlayers(r) {
@@ -743,12 +802,12 @@ function viewLobby() {
     <p class="sub center" style="margin:8px 0 0;word-break:break-all">${esc(link)}</p></div>
 
   <div class="card"><h2>제시어 카테고리</h2>
-    ${isHost ? `<select data-change="setCategory">${categoryOptions(m.category, true, null, m.visibility === 'private')}</select>
-      ${m.visibility !== 'private' ? `<p class="sub" style="margin-top:6px">커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.</p>` : ''}
-      ${m.category === CUSTOM_CATEGORY ? `<label class="f" for="lcw">단어 목록 <span class="sub">(쉼표 또는 줄바꿈 구분, 최소 ${CUSTOM_WORDS_MIN}개, 현재 ${(m.customWords || []).length}개 저장됨)</span></label>
-      <textarea id="lcw" data-model="lobbyCustomWords" rows="4" placeholder="예: 삼겹살, 짜장면, 떡볶이, 비빔밥, ...">${esc(S.form.lobbyCustomWords || (m.customWords || []).join(', '))}</textarea>
-      <div class="gap"></div><button class="btn small" data-act="saveCustomWords">단어 목록 저장</button>` : ''}`
-      : `<div><span class="badge v">${esc(categoryLabel(m.category))}</span> <span class="sub">방장이 정해요</span></div>`}
+    <div><span class="badge v">${esc(categoryLabel(m.category, m.customCategoryName))}</span>${!isHost ? ' <span class="sub">방장이 정해요</span>' : ''}</div>
+    ${isHost ? `<label class="f" for="catSel">카테고리 바꾸기</label>
+      <select id="catSel" data-change="setCategory">${categoryOptions(m.category, true, null, m.visibility === 'private')}</select>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px">
+      <p class="sub" style="margin:0">${m.visibility === 'private' ? '내가 만든 카테고리를 고를 수 있어요.' : '내가 만든 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.'}</p>
+      <button class="btn small" data-act="goMyCats" data-from="room">카테고리 관리</button></div>` : ''}
     <label class="f" for="wish">내가 원하는 카테고리 <span class="sub">(프로필에 표시)</span></label>
     <select id="wish" data-change="setWish">${categoryOptions(mine.wish || '', false, '선택 안 함')}</select></div>
 
@@ -789,7 +848,7 @@ function viewLobby() {
 function viewPlaying() {
   const r = S.room, m = r.meta, isHost = m.hostId === S.uid;
   return `<h1>게임 시작!</h1>
-  <div class="card"><p>카테고리: <span class="badge v">${esc(categoryLabel(m.category))}</span></p>
+  <div class="card"><p>카테고리: <span class="badge v">${esc(categoryLabel(m.category, m.customCategoryName))}</span></p>
   <p class="sub">온라인 모드의 게임 화면(질문·답변 턴, 채팅 규칙)은 3단계에서 만들 예정이에요. 지금은 '같은 공간' 모드로 게임을 해볼 수 있어요.</p>
   ${sortedPlayers(r).map(p => `<div class="player">${avatar(p.nickname, p.id)}<b class="grow">${esc(p.nickname)}</b></div>`).join('')}</div>
   ${isHost ? '<button class="btn block" data-act="backToLobby">대기실로 돌아가기</button>' : '<p class="sub center">방장이 대기실로 돌아가길 기다리는 중…</p>'}`;
@@ -841,7 +900,7 @@ function viewGame() {
     const mine = rows.find(x => x.id === me);
     if (!mine) {
       const w = r.myWord || '…';
-      return `<div class="rot"><div class="stage wd"><div class="cat">${esc(categoryLabel(m.category))}</div>
+      return `<div class="rot"><div class="stage wd"><div class="cat">${esc(categoryLabel(m.category, m.customCategoryName))}</div>
         <div class="word"><span>${esc(w)}</span></div>
         <button class="btn primary block huge" data-act="correct">정답!</button></div>
         <div class="row"><button class="btn small grow" data-act="leaveGame">나가기</button>
@@ -1227,7 +1286,7 @@ function viewOnline() {
       <button class="btn small primary" data-act="sendGame" ${canSend ? '' : 'disabled'}>${S.guessMode ? '정답 제출' : '보내기'}</button></div>
     ${st.canGuess ? `<button class="btn small block ${S.guessMode ? 'lemon' : ''}" style="margin-top:8px" data-act="toggleGuess"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.4"/><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/></svg>${S.guessMode ? '정답 시도 취소' : '정답 시도하기'}</button>` : ''}`;
   return `<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <div class="row wrap" style="gap:6px"><span class="badge v">${esc(categoryLabel(m.category))}</span>${specN ? `<span class="badge"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8S4 3.6 8 3.6 14.5 8 14.5 8 12 12.4 8 12.4 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>관전 ${specN}명</span>` : ''}</div>
+      <div class="row wrap" style="gap:6px"><span class="badge v">${esc(categoryLabel(m.category, m.customCategoryName))}</span>${specN ? `<span class="badge"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8S4 3.6 8 3.6 14.5 8 14.5 8 12 12.4 8 12.4 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>관전 ${specN}명</span>` : ''}</div>
       <div class="row">${spectating ? '<button class="btn small lemon" data-act="peek"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h6v3.4a3 3 0 0 1-6 0V3z"/><path d="M5 4H2.8c0 2 1 3 2.6 3.2M11 4h2.2c0 2-1 3-2.6 3.2"/><path d="M8 9.4V12M5.6 13.6h4.8M6 12h4"/></svg>결과 보기</button>' : ''}<button class="btn small" data-act="leaveGame">나가기</button>
       ${isHost ? '<button class="btn small" data-act="endGame">게임 그만하기</button>' : ''}</div></div>
     <div class="strip">${cards}</div>
@@ -1301,6 +1360,7 @@ function render() {
 
   const views = {
     setup: viewSetup, name: viewNickname, home: viewHome, join: viewJoin, create: viewCreate, room: viewRoom,
+    myCats: viewMyCats, catEdit: viewCatEdit,
     boot: () => '<div class="boot"><div class="boot-card">🤔</div><div class="boot-dots"><i></i><i></i><i></i></div></div>'
   };
   const isNewScreen = S.screen !== S._lastScreen; S._lastScreen = S.screen;
@@ -1499,7 +1559,7 @@ const Actions = {
     c[d.key] = v;
     if (c.mode === 'same') { c.visibility = 'private'; c.chatMode = 'normal'; c.chatLimit = 0; }
     const allowCustom = c.mode !== 'online' || c.visibility === 'private';
-    if (c.category === CUSTOM_CATEGORY && !allowCustom) { c.category = RANDOM_CATEGORY; toast('커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.'); }
+    if (isCustomChoice(c.category) && !allowCustom) { c.category = RANDOM_CATEGORY; toast('내가 만든 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.'); }
     render();
   },
   createRoom() {
@@ -1507,14 +1567,11 @@ const Actions = {
       const c = { ...S.form.create };
       if (c.mode === 'same') { c.visibility = 'private'; c.chatMode = 'normal'; c.chatLimit = 0; }
       if (c.chatMode === 'free') c.chatLimit = 0;
-      if (c.category === CUSTOM_CATEGORY) {
-        const allowCustom = c.mode !== 'online' || c.visibility === 'private';
-        if (!allowCustom) throw new Error('커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.');
-        c.customWords = parseCustomWords(S.form.createCustomWords);
-        if (c.customWords.length < CUSTOM_WORDS_MIN) throw new Error(`커스텀 단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${c.customWords.length}개)`);
-      } else {
-        c.customWords = null;
-      }
+      const allowCustom = c.mode !== 'online' || c.visibility === 'private';
+      if (isCustomChoice(c.category) && !allowCustom) throw new Error('내가 만든 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.');
+      const resolved = resolveCategoryChoice(c.category);
+      if (!resolved) throw new Error('선택한 카테고리를 찾을 수 없어요. 카테고리를 다시 골라 주세요.');
+      Object.assign(c, resolved);
       const code = await Api.createRoom(S.uid, S.nickname, c);
       enterRoom(code);
     });
@@ -1563,17 +1620,38 @@ const Actions = {
   },
   setCategory(v) {
     const r = S.room;
-    if (v === CUSTOM_CATEGORY && r.meta.visibility !== 'private') return toast('커스텀 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.');
-    return Api.setCategory(r.code, v, r.meta.visibility === 'public').catch(e => toast(e.message));
-  },
-  saveCustomWords() {
-    const r = S.room; if (!r || r.meta.hostId !== S.uid) return;
-    const words = parseCustomWords(S.form.lobbyCustomWords || (r.meta.customWords || []).join(', '));
-    if (words.length < CUSTOM_WORDS_MIN) return toast(`커스텀 단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${words.length}개)`);
-    return Api.setCustomWords(r.code, words).then(() => toast('단어 목록을 저장했어요.')).catch(e => toast(e.message));
+    if (isCustomChoice(v) && r.meta.visibility !== 'private') return toast('내가 만든 카테고리는 비공개방 또는 같은 공간 모드에서만 쓸 수 있어요.');
+    const resolved = resolveCategoryChoice(v);
+    if (!resolved) return toast('선택한 카테고리를 찾을 수 없어요. 카테고리를 다시 골라 주세요.');
+    return Api.setCategory(r.code, resolved, r.meta.visibility === 'public').catch(e => toast(e.message));
   },
   setWish(v) { return Api.setWish(S.room.code, S.uid, v).catch(e => toast(e.message)); },
   setCreateCategory(v) { S.form.create.category = v; },
+  goMyCats(d) { S.catsReturnTo = (d && d.from) || 'home'; go('myCats'); },
+  backFromMyCats() { go(S.catsReturnTo || 'home'); },
+  goCatNew() { S.form.catId = null; S.form.catName = ''; S.form.catWordsText = ''; go('catEdit'); },
+  goCatEdit(d) {
+    const cat = (S.myCats || {})[d.id]; if (!cat) return;
+    S.form.catId = d.id; S.form.catName = cat.name || ''; S.form.catWordsText = (cat.words || []).join(', ');
+    go('catEdit');
+  },
+  backFromCatEdit() { go('myCats'); },
+  saveCat() {
+    return run(async () => {
+      const name = (S.form.catName || '').trim().slice(0, CAT_NAME_MAX);
+      if (!name) throw new Error('카테고리 이름을 입력해 주세요.');
+      const words = parseCustomWords(S.form.catWordsText);
+      if (words.length < CUSTOM_WORDS_MIN) throw new Error(`단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${words.length}개)`);
+      const id = S.form.catId || Api.newId();
+      await Api.saveCategory(S.uid, id, { name, words, updatedAt: Api.TS() });
+      toast('카테고리를 저장했어요.');
+      go('myCats');
+    });
+  },
+  deleteCat(d) {
+    if (!confirm('이 카테고리를 삭제할까요?\n이미 만들어진 방에는 영향을 주지 않아요.')) return;
+    return Api.deleteCategory(S.uid, d.id).then(() => toast('삭제했어요.')).catch(e => toast(e.message));
+  },
   toggleReady() { const me = S.room.players[S.uid] || {}; return Api.setReady(S.room.code, S.uid, !me.ready).catch(e => toast(e.message)); },
   kick(d) {
     if (!confirm(`${d.name}님을 강퇴할까요?\n강퇴하면 이 방에 다시 들어올 수 없어요.`)) return;
@@ -1605,7 +1683,7 @@ const Actions = {
       const r = S.room; if (r.meta.hostId !== S.uid) return;
       if (r.meta.category === CUSTOM_CATEGORY) {
         const n = Object.keys(r.players).length, have = (r.meta.customWords || []).length;
-        if (have < n) throw new Error(`커스텀 단어가 부족해요. 최소 ${n}개 필요해요. (현재 ${have}개) 카테고리에서 단어 목록을 저장해 주세요.`);
+        if (have < n) throw new Error(`카테고리 단어가 부족해요. 최소 ${n}개 필요해요. (현재 ${have}개)`);
       }
       await Api.startGame(r.code, r.meta, r.players);
     });
@@ -1692,6 +1770,7 @@ if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App
   render();
   try {
     S.uid = await Api.init();
+    S.unsubMyCats = Api.watchMyCategories(S.uid, list => { S.myCats = list; if (S.screen === 'myCats' || S.screen === 'create' || (S.room && S.room.meta && S.room.meta.hostId === S.uid)) render(); });
     const qp = new URLSearchParams(location.search).get('room');
     if (qp) { S.pendingCode = qp.toUpperCase(); history.replaceState(null, '', location.pathname); }
     const prof = await Api.getProfile(S.uid);
