@@ -18,8 +18,12 @@ android {
         // versionCode: 구글 플레이는 업데이트마다 이 숫자가 반드시 이전보다 커야 업로드를 받아줌.
         // CI(ANDROID_VERSION_CODE 환경변수, 깃허브 빌드 번호)가 매 빌드마다 자동으로 올려줌.
         // 로컬에서 직접 빌드할 때는 환경변수가 없으니 1로 fallback.
-        versionCode (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
-        versionName System.getenv("ANDROID_VERSION_NAME") ?: "1.0"
+        // (값을 변수에 먼저 담아서 씀: "versionCode (a).toInteger()"처럼 한 줄로 쓰면
+        //  그루비가 toInteger()를 versionCode(...)의 리턴값에 적용해버려서 빌드가 깨짐)
+        def verCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
+        def verName = System.getenv("ANDROID_VERSION_NAME") ?: "1.0"
+        versionCode verCode
+        versionName verName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
