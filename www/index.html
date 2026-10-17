@@ -326,6 +326,10 @@ function newPlayer(nickname) {
 }
 
 const COUNTDOWN_SEC = 5; // 게임 시작 전 카운트다운(초)
+// 게임 시작 전 '전면 광고 보기' 대기 단계 관련 값
+const AD_MAX_MS = 30000; // 전면 광고(영상) 최대 길이로 가정하는 값(보통 전면 광고는 30초 이내예요. 실제 운영 결과를 보고 이 값만 조정하면 됩니다)
+const AD_WAIT_TIMEOUT_MS = Math.round(AD_MAX_MS * 1.4); // 광고를 다 못 보고 멈춰 있는 사람을 몇 초까지 기다려 줄지(광고 최대 길이의 1.4배) - 지나면 이번 판에서 빼고 시작함
+const AD_FALLBACK_MS = 3000; // 광고 플러그인이 아직 연결 안 돼 있거나 광고 로드에 실패했을 때, 이 시간만 기다리고 바로 '봤다'고 처리함(게임이 멈추지 않도록)
 // 가로 화면 기본 방향: 화면을 '보는 사람' 기준으로 홈 버튼(폰 아래쪽)이 어느 쪽에 오는지 ('left' 또는 'right')
 // 방향이 반대로 보이면 이 값만 바꾸면 됩니다.
 const LANDSCAPE_HOME_SIDE = 'left';
@@ -482,7 +486,7 @@ const Api = {
 
   /* 방 실시간 구독 */
   watchRoom(code, uid, cb) {
-    const subs = ['meta', 'players', 'muted', 'kicked', 'game', 'wordHashes', 'reports'].map(k => {
+    const subs = ['meta', 'players', 'muted', 'kicked', 'game', 'wordHashes', 'reports', 'starting'].map(k => {
       const ref = this.R(`rooms/${code}/${k}`);
       const fn = ref.on('value', s => cb(k, s.val()), () => {});
       return () => ref.off('value', fn);
@@ -550,6 +554,16 @@ const Api = {
     });
   },
   deleteProfile(uid) { return this.R(`users/${uid}`).remove(); },
+  /* 게임 시작 전 '전면 광고 보기' 대기 단계 (방장) : 다 보거나 시간 초과된 사람만 모아서 실제로 startGame을 부름 */
+  async beginStart(code, players) {
+    const want = Object.fromEntries(Object.keys(players).map(id => [id, true]));
+    await this.db.ref().update({
+      [`rooms/${code}/meta/status`]: 'starting',
+      [`rooms/${code}/starting`]: { beganAt: this.TS(), want, ready: {} }
+    });
+  },
+  markAdReady(code, uid) { return this.R(`rooms/${code}/starting/ready/${uid}`).set(true); }, // 내가 광고를 다 봤어요(스킵 포함)
+  cancelStart(code) { return this.db.ref().update({ [`rooms/${code}/meta/status`]: 'lobby', [`rooms/${code}/starting`]: null }); }, // 광고 기다리는 동안 전원이 나가버린 경우 로비로 되돌림
   /* 게임 시작 / 다시 하기 (방장) : 제시어를 사람마다 하나씩 배정 */
   async startGame(code, meta, players) {
     const ids = Object.keys(players);
@@ -1158,6 +1172,43 @@ function ensureHost() { // 방장 폰의 연결이 끊긴 채 15초가 지나면
   Api.transferHost(r.code, S.uid, S.nickname, r.meta.visibility === 'public').catch(() => {});
 }
 
+/* ---- 게임 시작 전 '전면 광고 보기' 대기 단계 ---- */
+// 내 화면에 이번 대기 단계용 광고를 아직 안 띄웠으면 띄우고, 다 보면(스킵 포함) 서버에 '준비됨'을 알림
+function maybeShowStartAd() {
+  const r = S.room;
+  if (!r || !r.meta || r.meta.status !== 'starting' || !r.starting || !r.players[S.uid]) return;
+  const key = r.starting.beganAt || 'x';
+  if (S._adShownFor === key) return;
+  S._adShownFor = key;
+  if ((r.starting.ready || {})[S.uid]) return; // 이미 준비 완료로 기록돼 있음(새로고침 등으로 다시 들어온 경우)
+  showInterstitialThenReady(r.code);
+}
+function showInterstitialThenReady(code) {
+  const done = () => Api.markAdReady(code, S.uid).catch(() => {});
+  // TODO: 애드몹 전면 광고 플러그인을 연결하면 이 자리에서 실제 광고를 띄우고,
+  // 광고가 닫힐 때(끝까지 보거나 스킵하거나 모두) done()을 호출하도록 바꾸면 됩니다. 예)
+  //   AdMob.showInterstitial().catch(() => {}).finally(done);
+  // 지금은 광고 플러그인이 아직 연결돼 있지 않아서, 짧은 대기 후 바로 '봤다'고 처리해서 게임이 막히지 않게 해둠.
+  setTimeout(done, AD_FALLBACK_MS);
+}
+// 방장 폰이 모두가 광고를 다 봤는지(또는 시간 초과됐는지) 지켜보다가, 실제 게임을 시작시킴
+// (game 데이터를 통째로 쓰는 권한은 방장에게만 있어서, 이 판단은 '그 순간의 방장'이 함 - 방장이 끊기면 ensureHost가 다음 사람에게 방장을 넘겨주므로 자연스럽게 이어짐)
+function driveStarting() {
+  const r = S.room;
+  if (!r || !r.meta || r.meta.status !== 'starting' || !r.starting || r.meta.hostId !== S.uid) return;
+  const want = Object.keys(r.starting.want || {}).filter(id => r.players[id]); // 대기 중 나간 사람은 자동으로 빠짐
+  const ready = r.starting.ready || {};
+  const allReady = want.every(id => ready[id]);
+  const timedOut = Api.now() - (r.starting.beganAt || Api.now()) > AD_WAIT_TIMEOUT_MS;
+  if (!allReady && !timedOut) return;
+  if (Date.now() - (S._startingAt || 0) < 3000) return; // 짧은 시간 안에 중복 실행 방지
+  S._startingAt = Date.now();
+  const finalIds = timedOut ? want.filter(id => ready[id]) : want;
+  if (!finalIds.length) { Api.cancelStart(r.code).catch(() => {}); return; } // 기다리는 동안 전원이 나가버린 경우
+  const players = Object.fromEntries(finalIds.map(id => [id, r.players[id]]));
+  Api.startGame(r.code, r.meta, players).catch(() => {});
+}
+
 /* ---- 다른 멤버의 제시어 구독 (내 것은 서버가 막아 둠) ---- */
 function syncWordListeners() {
   const r = S.room; if (!r || !r.meta || r.meta.mode !== 'online') return;
@@ -1296,8 +1347,21 @@ function viewOnline() {
     ${inputArea}`;
 }
 
+function viewAdWait() { // 게임 시작 전 '전면 광고 보기' 대기 화면
+  const r = S.room, ready = (r.starting && r.starting.ready) || {};
+  const want = Object.keys((r.starting && r.starting.want) || {}).filter(id => r.players[id]);
+  const readyCount = want.filter(id => ready[id]).length;
+  const amReady = !!ready[S.uid];
+  return `<div class="center"><h1 class="title sm">잠시만요!</h1></div>
+    <div class="card center">
+      <p class="sub">${amReady ? '광고를 다 보셨어요. 다른 친구들을 기다리는 중…' : '짧은 광고를 보고 나면 게임이 시작돼요.'}</p>
+      <div class="boot-dots" style="justify-content:center"><i></i><i></i><i></i></div>
+      <p class="sub" style="margin-top:10px">${readyCount} / ${want.length}명 준비 완료</p>
+    </div>`;
+}
 function viewRoom() {
   if (!S.room || !S.room.meta) return '<div class="empty">방에 들어가는 중…</div>';
+  if (S.room.meta.status === 'starting') return viewAdWait();
   if (S.room.meta.status !== 'playing') return viewLobby();
   return S.room.meta.mode === 'same' ? viewGame() : viewOnline();
 }
@@ -1393,8 +1457,8 @@ function go(screen) {
 function enterRoom(code) {
   if (S.unsubRoom) S.unsubRoom();
   S.leaving = false;
-  S.room = { code, meta: null, players: {}, muted: {}, kicked: {}, chat: [], game: null, myWord: null, words: {}, hashes: {}, reports: {}, joined: false };
-  S.peek = null; S._seenAt = 0; S._actSent = 0; S._actAt = 0; markActive();
+  S.room = { code, meta: null, players: {}, muted: {}, kicked: {}, chat: [], game: null, myWord: null, words: {}, hashes: {}, reports: {}, joined: false, starting: null };
+  S.peek = null; S._seenAt = 0; S._actSent = 0; S._actAt = 0; S._adShownFor = null; S._startingAt = 0; markActive();
   if (Api.lastJoinSpectator) { toast('진행 중인 게임이에요. 관전 모드로 들어왔어요 👀'); Api.lastJoinSpectator = false; }
   localStorage.setItem('lastRoom', code);
   Api.attachPresence(code, S.uid);
@@ -1422,6 +1486,7 @@ function enterRoom(code) {
     else if (key === 'word') r.myWord = val;
     else if (key === 'wordHashes') r.hashes = val || {};
     else if (key === 'reports') r.reports = val || {};
+    else if (key === 'starting') r.starting = val;
     if (r.meta) { syncWordListeners(); if (S.screen !== 'room') go('room'); else render(); }
   });
   S.screen = 'room'; render();
@@ -1433,6 +1498,7 @@ function tick() { // 카운트다운/게임 단계가 바뀌면 화면을 다시
   const r = S.room;
   heartbeat(); ensureHost(); roomPulse(); roomExpiry(); homeRefresh();
   if (S.screen === 'create') { requestWake(); return; } // 방 만들기(카테고리 선택) 중에는 화면이 꺼지지 않게 유지
+  if (r && r.meta && r.meta.status === 'starting') { requestWake(); maybeShowStartAd(); driveStarting(); return; } // 광고 보는 중엔 화면 유지 + 방장은 모두 준비됐는지 지켜봄
   if (r && r.meta && r.meta.mode === 'online' && r.meta.status === 'playing' && S.screen === 'room') { releaseWake(); driveOnline(); updateTimer(); return; }
   if (!r || !r.meta || r.meta.mode !== 'same' || r.meta.status !== 'playing' || S.screen !== 'room') { releaseWake(); S._pk = null; return; }
   const p = gamePhase(), key = p.phase + ':' + (p.sec || '');
@@ -1685,7 +1751,7 @@ const Actions = {
         const n = Object.keys(r.players).length, have = (r.meta.customWords || []).length;
         if (have < n) throw new Error(`카테고리 단어가 부족해요. 최소 ${n}개 필요해요. (현재 ${have}개)`);
       }
-      await Api.startGame(r.code, r.meta, r.players);
+      await Api.beginStart(r.code, r.players);
     });
   },
   rematch() { return Actions.start(); },
