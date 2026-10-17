@@ -38,10 +38,10 @@
           ".read": "auth != null",
           ".write": "auth != null && ((!data.exists() && newData.child('hostId').val() === auth.uid) || data.child('hostId').val() === auth.uid)",
           "hostId": {
-            ".write": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('online').val() === false && newData.val() === auth.uid"
+            ".write": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && newData.val() === auth.uid && (root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('online').val() === false || (root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('beat').val() != null && now - root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('beat').val() > 25000))"
           },
           "hostName": {
-            ".write": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('online').val() === false"
+            ".write": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && (root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('online').val() === false || (root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('beat').val() != null && now - root.child('rooms').child($code).child('players').child(root.child('rooms').child($code).child('meta').child('hostId').val()).child('beat').val() > 25000))"
           },
           ".validate": "newData.hasChildren(['hostId', 'mode'])",
           "lastSeen": {

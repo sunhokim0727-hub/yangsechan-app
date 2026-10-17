@@ -336,6 +336,12 @@ const COUNTDOWN_SEC = 5; // 게임 시작 전 카운트다운(초)
 const AD_MAX_MS = 60000; // 전면 영상 광고가 끝까지 재생될 수 있는 넉넉한 최대 길이로 가정하는 값(초 단위 60초)
 const AD_WAIT_TIMEOUT_MS = Math.round(AD_MAX_MS * 1.4); // 광고를 다 못 보고 멈춰 있는 사람을 몇 초까지 기다려 줄지(위 값의 1.4배 ≈ 84초) - 지나면 이번 판에서 빼고 시작함
 const AD_FALLBACK_MS = 3000; // 광고 플러그인이 아직 연결 안 돼 있거나 광고 로드에 실패했을 때, 이 시간만 기다리고 바로 '봤다'고 처리함(게임이 멈추지 않도록)
+// 애드몹 전면 광고 단위 ID. AdMob 콘솔(admob.google.com) > 광고 단위 목록에서 확인 가능.
+const AD_UNIT_ID = 'ca-app-pub-3835215845956520/8096906386';
+// 테스트 모드: true면 실제 광고 대신 구글이 제공하는 '샘플(테스트)' 광고가 나옴.
+// 우리가 우리 앱에서 우리 광고를 직접 보거나 누르면 '부정 클릭'으로 애드몹 계정이 정지될 수 있어서,
+// 스토어에 정식 출시하기 전까지는 반드시 true로 두고 개발/테스트할 것. 실제 출시 빌드에서만 false로 바꿀 것.
+const AD_TEST_MODE = true;
 // 가로 화면 기본 방향: 화면을 '보는 사람' 기준으로 홈 버튼(폰 아래쪽)이 어느 쪽에 오는지 ('left' 또는 'right')
 // 방향이 반대로 보이면 이 값만 바꾸면 됩니다.
 const LANDSCAPE_HOME_SIDE = 'left';
@@ -1167,10 +1173,17 @@ function heartbeat() { // 10초마다 '나 살아있어요' 표시 (화면이 �
   S._beat = Api.now();
   Api.R(`rooms/${r.code}/players/${S.uid}/beat`).set(Api.TS()).catch(() => {});
 }
-function ensureHost() { // 방장 폰의 연결이 끊긴 채 15초가 지나면, 진행자가 방장 자리를 이어받음
+function ensureHost() { // 방장 폰이 (1)연결이 끊겼거나 (2)연결은 붙어있지만 하트비트가 끊겨서 사실상 멈춰있는 채로
+                        // 15초가 지나면, 진행자가 방장 자리를 이어받음.
+                        // (2)는 방장이 광고 보던 중 잠들거나 홈버튼으로 다른 앱을 켜서 화면/타이머가 멈춘 경우처럼,
+                        // 소켓 연결(onDisconnect) 자체는 안 끊겼지만 더 이상 반응이 없는 상황을 잡아내기 위한 보강임
+                        // - driverId()가 '진행자' 후보를 거를 때 쓰는 BEAT_STALE 기준을 그대로 재사용함
   const r = S.room; if (!r || !r.joined || !r.meta) return;
   const h = r.players[r.meta.hostId];
-  if (!h || h.online !== false) { S._hostOffAt = null; return; }
+  const now = Api.now();
+  const offline = !h || h.online === false;
+  const stuck = !offline && h.beat && now - h.beat > BEAT_STALE;
+  if (!offline && !stuck) { S._hostOffAt = null; return; }
   if (driverId(r) !== S.uid) return;
   if (!S._hostOffAt) { S._hostOffAt = Date.now(); return; }
   if (Date.now() - S._hostOffAt < HOST_OFFLINE_GRACE) return;
@@ -1190,12 +1203,29 @@ function maybeShowStartAd() {
   showInterstitialThenReady(r.code);
 }
 function showInterstitialThenReady(code) {
-  const done = () => Api.markAdReady(code, S.uid).catch(() => {});
-  // TODO: 애드몹 전면 광고 플러그인을 연결하면 이 자리에서 실제 광고를 띄우고,
-  // 광고가 닫힐 때(끝까지 보거나 스킵하거나 모두) done()을 호출하도록 바꾸면 됩니다. 예)
-  //   AdMob.showInterstitial().catch(() => {}).finally(done);
-  // 지금은 광고 플러그인이 아직 연결돼 있지 않아서, 짧은 대기 후 바로 '봤다'고 처리해서 게임이 막히지 않게 해둠.
-  setTimeout(done, AD_FALLBACK_MS);
+  let settled = false;
+  const done = () => {
+    if (settled) return; settled = true;
+    clearTimeout(safety);
+    offLoaded(); offFailLoad(); offShow(); offFailShow(); offDismiss();
+    Api.markAdReady(code, S.uid).catch(() => {});
+  };
+  const CP = window.Capacitor && window.Capacitor.Plugins;
+  const AdMob = CP && CP.AdMob;
+  // 혹시 리스너가 하나도 안 불리는 이상 상황에 대비한 최후 안전장치(위 AD_FALLBACK_MS보다 훨씬 길게 잡아,
+  // 정상적으로 광고가 뜬 경우엔 절대 이게 먼저 발동하지 않도록 함)
+  const safety = setTimeout(done, AD_MAX_MS + 10000);
+  if (!AdMob) { clearTimeout(safety); setTimeout(done, AD_FALLBACK_MS); return; } // 브라우저 미리보기 등 광고 플러그인이 없는 환경
+  const noop = () => {};
+  let offLoaded = noop, offFailLoad = noop, offShow = noop, offFailShow = noop, offDismiss = noop;
+  const E = { Loaded: 'interstitialAdLoaded', FailedToLoad: 'interstitialAdFailedToLoad', Showed: 'interstitialAdShowed', FailedToShow: 'interstitialAdFailedToShow', Dismissed: 'interstitialAdDismissed' };
+  const on = (name, fn) => { const h = AdMob.addListener(name, fn); return () => h.then(x => x.remove()).catch(() => {}); };
+  offFailLoad = on(E.FailedToLoad, done);   // 광고를 못 불러옴 → 게임이 막히지 않게 바로 '봤다' 처리
+  offFailShow = on(E.FailedToShow, done);   // 불러오긴 했는데 재생에 실패함 → 역시 바로 처리
+  offDismiss = on(E.Dismissed, done);       // 광고를 닫음(끝까지 보거나 스킵하거나 모두 여기로 옴) → 진짜로 '봤다' 처리
+  offLoaded = on(E.Loaded, () => { AdMob.showInterstitial().catch(done); });
+  offShow = noop;
+  AdMob.prepareInterstitial({ adId: AD_UNIT_ID, isTesting: AD_TEST_MODE }).catch(done);
 }
 // 방장 폰이 모두가 광고를 다 봤는지(또는 시간 초과됐는지) 지켜보다가, 실제 게임을 시작시킴
 // (game 데이터를 통째로 쓰는 권한은 방장에게만 있어서, 이 판단은 '그 순간의 방장'이 함 - 방장이 끊기면 ensureHost가 다음 사람에게 방장을 넘겨주므로 자연스럽게 이어짐)
@@ -1843,6 +1873,8 @@ if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App
   if (!FIREBASE_CONFIG.apiKey) { S.screen = 'setup'; return render(); }
   render();
   try {
+    const CP0 = window.Capacitor && window.Capacitor.Plugins;
+    if (CP0 && CP0.AdMob) CP0.AdMob.initialize().catch(() => {}); // 광고 플러그인 초기 준비(실패해도 게임 진행엔 영향 없음)
     S.uid = await Api.init();
     S.unsubMyCats = Api.watchMyCategories(S.uid, list => { S.myCats = list; if (S.screen === 'myCats' || S.screen === 'create' || (S.room && S.room.meta && S.room.meta.hostId === S.uid)) render(); });
     const qp = new URLSearchParams(location.search).get('room');

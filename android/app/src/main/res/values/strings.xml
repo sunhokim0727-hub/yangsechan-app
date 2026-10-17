@@ -4,4 +4,5 @@
     <string name="title_activity_main">제시어게임</string>
     <string name="package_name">com.sunho.yangsechan</string>
     <string name="custom_url_scheme">com.sunho.yangsechan</string>
+    <string name="admob_app_id">ca-app-pub-3835215845956520~9020859837</string>
 </resources>
