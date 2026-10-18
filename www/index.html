@@ -1585,8 +1585,16 @@ function render() {
     boot: () => '<div class="boot"><div class="boot-card">🤔</div><div class="boot-dots"><i></i><i></i><i></i></div></div>'
   };
   const isNewScreen = S.screen !== S._lastScreen; S._lastScreen = S.screen;
-  $app.innerHTML = '<div id="viewWrap">' + (views[S.screen] || views.boot)() + '</div>'
+  const html = '<div id="viewWrap">' + (views[S.screen] || views.boot)() + '</div>'
     + (S.showQR && S.room ? viewQR() : '') + (S.showHelp && S.screen === 'home' ? viewHelp() : '') + (S.reportTarget ? viewReport() : '');
+  // 화면에 실제로 보일 내용이 지난번과 완전히 똑같으면 DOM을 아예 건드리지 않음.
+  // 안 그러면 하트비트(10초)/홈 화면 새로고침(30초) 같은 백그라운드 주기 갱신이 아무 것도
+  // 바뀐 게 없어도 매번 전체 DOM을 새로 만들어서, 열려 있던 모달(이용방법 등)의 등장 애니메이션이
+  // 반복 재생되며 깜빡이거나, 열려 있던 네이티브 <select> 드롭다운(카테고리 선택 등)이
+  // 그 순간 DOM이 통째로 교체되면서 강제로 닫혀 버리는 문제가 있었음.
+  if (html === S._lastHtml) { fitWord(); applyRole(); maybeConfetti(); return; }
+  S._lastHtml = html;
+  $app.innerHTML = html;
   if (isNewScreen) { const vw = document.getElementById('viewWrap'); if (vw) vw.classList.add('enter'); }
 
   const nlog = document.getElementById('chatlog');
@@ -2018,6 +2026,7 @@ if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App
     go('home');
   } catch (e) {
     console.error(e);
+    S._lastHtml = null; // render()의 '내용 그대로면 안 건드림' 캐시를 무효화(아래는 render()를 거치지 않는 직접 출력이라)
     $app.innerHTML = `<h1>연결에 실패했어요</h1><div class="card"><p>${esc(e.message)}</p>
     <p class="sub">Firebase 설정값, 익명 로그인 사용 설정, 인터넷 연결을 확인해 주세요.</p></div>`;
   }
