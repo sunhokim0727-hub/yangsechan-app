@@ -979,10 +979,10 @@ function viewResult() {
       <div class="sub">제시어: ${wordOrHidden(myWord(d))}</div></div></div>`;
   const pendRow = id => `<div class="player ${id === me ? 'me' : ''} loser"><span class="rank last"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌</span>${avatar(nameOf(r, id), id)}
       <div class="grow"><b>${esc(nameOf(r, id))}</b>${meBadge(id)}
-      <div class="sub">${(r.game.left || {})[id] ? '중간에 나갔어요' : (m.mode === 'online' ? '마지막까지 못 맞혔어요' : '끝까지 못 맞혔어요')}${(m.mode === 'online' && id !== me && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div></div>`;
+      <div class="sub">${(r.game.left || {})[id] ? '중간에 나갔어요' : (m.mode === 'online' ? '마지막까지 못 맞혔어요' : '끝까지 못 맞혔어요')}${(m.mode === 'online' && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div></div>`;
   const mine = rows.find(d => d.id === me);
   const meCard = (mine || pending.includes(me)) ? `<div class="mecard">${avatar(nameOf(r, me), me)}
-    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌'}</div>${mine ? `<div class="sub">제시어: ${wordOrHidden(myWord(mine))}</div>` : ''}</div></div>` : '';
+    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌'}</div>${mine ? `<div class="sub">제시어: ${wordOrHidden(myWord(mine))}</div>` : (m.mode === 'online' && r.words[me] ? `<div class="sub">제시어: ${esc(r.words[me])}</div>` : '')}</div></div>` : '';
   return `<div class="center"><h1 class="title sm">결과 발표!</h1></div>
     ${meCard}
     <div class="podium">${[1, 0, 2].map(pod).join('')}</div>
@@ -1069,7 +1069,15 @@ async function driveOnline() {
   const g = r.game; if (!g || !g.startedAt || g.ended || S.driving) return;
   if (S._gid == null || Math.abs(S._gid - g.startedAt) > 2000) { S._gid = g.startedAt; S.judged = {}; S.warned = {}; S.advancedFor = -1; S._offSince = {}; }
   S.driving = true;
-  try { await driveDisconnected(r, g); await driveSoleSurvivor(r, g); await driveStep(r, g); } catch (e) { console.error(e); S.advancedFor = -1; } finally { S.driving = false; }
+  try { await driveDisconnected(r, g); await driveSoleSurvivor(r, g); await driveStep(r, g); await driveFinish(r, g); } catch (e) { console.error(e); S.advancedFor = -1; } finally { S.driving = false; }
+}
+// 알아서(모두 처리되어/혼자 남아) 게임이 끝난 경우에도 game/ended를 명시적으로 기록해둠.
+// 이렇게 해두면 "게임이 끝났으니 이제 내 제시어를 나 자신도 볼 수 있다"는 보안 규칙 조건으로 쓸 수 있고,
+// (예: 끝까지 못 맞힌 꼴찌도 결과 화면에서 자기 제시어가 뭐였는지 볼 수 있게 됨)
+// 다음 틱부터는 driveOnline() 맨 위에서 g.ended를 보고 바로 멈추므로 중복 실행 걱정은 없음
+async function driveFinish(r, g) {
+  if (g.ended || aliveIds(r).length > 1) return;
+  await Api.R(`rooms/${r.code}/game/ended`).set(true).catch(() => {});
 }
 // 다른 사람들이 전부 연결 끊김/자리비움 등 타임아웃으로 빠져서 1명만 남으면(아직 아무도 정답을 못 맞힌 상태),
 // 그 사람 탓이 아니라 다들 빠져서 혼자 남은 거니까 '꼴찌'가 아니라 1등으로 처리함.
@@ -1337,14 +1345,14 @@ function syncWordListeners() {
     r._wl[id] = () => ref.off('value', fn);
   }
 }
-// 다들 타임아웃으로 빠지고 나 혼자 남아 자동으로 1등 처리된 경우, 그 순간 진행자가 '내 제시어'를
-// 읽을 수 없어서(원래 자기 제시어는 자기 자신에게 안 보임) results에 빈 값으로 저장됐을 수 있음.
-// 지금은 내 결과(game/results/내uid)가 이미 생겨서 "게임이 끝난 나"는 규칙상 내 제시어를 읽을 수
-// 있으므로, 한 번만 읽어와서 화면에 보강해 보여줌 (저장된 결과값 자체는 건드리지 않음)
+// 게임 중엔 원래 자기 제시어를 자기 자신에게 안 보여주지만(온라인 모드 핵심 규칙),
+// 게임이 완전히 끝난 뒤(game/ended)에는 결과 화면에서 "내 제시어가 뭐였는지"는 봐도 되므로
+// 한 번만 읽어와서 화면에 보강해 보여줌(저장된 결과값 자체는 건드리지 않음).
+// - 혼자 남아 자동 1등 처리된 경우: results에 빈 제시어로 저장됐던 걸 채워줌
+// - 끝까지 못 맞힌 꼴찌인 경우: 애초에 results 자체가 없어서 내 제시어를 전혀 못 봤던 걸 채워줌
 function revealMyWord(r) {
   if (!r || !r.meta || r.meta.mode !== 'online' || r._wordRevealFor === r.code) return;
-  const mine = ((r.game && r.game.results) || {})[S.uid];
-  if (!mine || mine.word || r.words[S.uid]) return;
+  if (!r.game || !r.game.ended || r.words[S.uid]) return;
   r._wordRevealFor = r.code;
   Api.R(`rooms/${r.code}/words/${S.uid}`).once('value').then(sn => {
     const w = sn.val();

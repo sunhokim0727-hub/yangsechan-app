@@ -89,7 +89,7 @@
         "words": {
           ".write": "auth != null && !newData.exists() && root.child('rooms').child($code).child('meta').child('hostId').val() === auth.uid",
           "$uid": {
-            ".read": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && ((root.child('rooms').child($code).child('meta').child('mode').val() === 'same' && auth.uid === $uid) || (!(root.child('rooms').child($code).child('meta').child('mode').val() === 'same') && auth.uid !== $uid) || (auth.uid === $uid && root.child('rooms').child($code).child('game').child('results').child($uid).exists()))",
+            ".read": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && ((root.child('rooms').child($code).child('meta').child('mode').val() === 'same' && auth.uid === $uid) || (!(root.child('rooms').child($code).child('meta').child('mode').val() === 'same') && auth.uid !== $uid) || (auth.uid === $uid && (root.child('rooms').child($code).child('game').child('results').child($uid).exists() || root.child('rooms').child($code).child('game').child('ended').val() === true)))",
             ".write": "auth != null && root.child('rooms').child($code).child('meta').child('hostId').val() === auth.uid"
           }
         },
@@ -108,6 +108,9 @@
             }
           },
           "turn": {
+            ".write": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && root.child('rooms').child($code).child('meta').child('mode').val() === 'online'"
+          },
+          "ended": {
             ".write": "auth != null && root.child('rooms').child($code).child('players').child(auth.uid).exists() && root.child('rooms').child($code).child('meta').child('mode').val() === 'online'"
           }
         },
