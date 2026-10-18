@@ -962,23 +962,27 @@ function viewResult() {
   const newBox = newcomers.length ? `<div class="newmem">👀 새 멤버 ${newcomers.length}명이 들어왔어요!<div>${newcomers.map(esc).join(', ')}</div>
     <div class="sub">${isHost ? '한 판 더를 누르면 새 멤버와 함께 시작하고, 대기실로를 누르면 새 멤버와 함께 대기실로 이동해요.' : '방장이 한 판 더 또는 대기실로를 누르면 함께 시작해요.'}</div></div>` : '';
   const meBadge = id => id === me ? ' <span class="badge l">나</span>' : '';
+  // 혼자 남아 자동 1등 처리된 경우 저장된 결과엔 내 제시어가 빈 값일 수 있는데, revealMyWord()가
+  // 나중에 읽어온 값이 r.words[me]에 들어오므로 내 줄에 한해서는 그걸 우선 사용
+  const myWord = d => (d.id === me && !d.word && r.words[me]) ? r.words[me] : d.word;
   const pod = i => {
     const d = podium[i];
     if (!d) return '<div class="pod none"><div class="bar"></div></div>';
+    const w = myWord(d);
     return `<div class="pod p${i + 1} ${d.id === me ? 'me' : ''}">${avatar(nameOf(r, d.id), d.id)}
-      <div class="pn">${esc(nameOf(r, d.id))}${meBadge(d.id)}</div><div class="pw">${d.word ? esc(d.word) : '비공개'}</div>
+      <div class="pn">${esc(nameOf(r, d.id))}${meBadge(d.id)}</div><div class="pw">${w ? esc(w) : '비공개'}</div>
       <div class="bar">${['🥇', '🥈', '🥉'][i]}</div></div>`;
   };
   // 전체 순위: 참가한 모든 사람을 프로필과 함께, 내 줄은 보라색으로 강조
   const rowHtml = d => `<div class="player ${d.id === me ? 'me' : ''} ${isLast(d) ? 'loser' : ''}"><span class="rank ${isLast(d) ? 'last' : ''}">${rankLabel(d.rank, total)}</span>
       ${avatar(nameOf(r, d.id), d.id)}<div class="grow"><b>${esc(nameOf(r, d.id))}</b>${meBadge(d.id)}
-      <div class="sub">제시어: ${wordOrHidden(d.word)}</div></div></div>`;
+      <div class="sub">제시어: ${wordOrHidden(myWord(d))}</div></div></div>`;
   const pendRow = id => `<div class="player ${id === me ? 'me' : ''} loser"><span class="rank last"><svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌</span>${avatar(nameOf(r, id), id)}
       <div class="grow"><b>${esc(nameOf(r, id))}</b>${meBadge(id)}
       <div class="sub">${(r.game.left || {})[id] ? '중간에 나갔어요' : (m.mode === 'online' ? '마지막까지 못 맞혔어요' : '끝까지 못 맞혔어요')}${(m.mode === 'online' && id !== me && r.words[id]) ? ' · 제시어: ' + esc(r.words[id]) : ''}</div></div></div>`;
   const mine = rows.find(d => d.id === me);
   const meCard = (mine || pending.includes(me)) ? `<div class="mecard">${avatar(nameOf(r, me), me)}
-    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌'}</div>${mine ? `<div class="sub">제시어: ${wordOrHidden(mine.word)}</div>` : ''}</div></div>` : '';
+    <div class="grow"><div class="sub">내 결과</div><div class="mr">${mine ? rankLabel(mine.rank, total) : '<svg width="14" height="14" viewBox="0 0 16 16" style="vertical-align:-2px;margin-right:3px"><ellipse cx="8.4" cy="8.6" rx="5.6" ry="4" fill="currentColor"/><path d="M8.4 5.6c1.6 0 2.9 1 3.4 2.4-1 .5-2.1.8-3.4.8s-2.4-.3-3.4-.8c.5-1.4 1.8-2.4 3.4-2.4z" fill="#FFFFFF" opacity="0.35"/><circle cx="2.6" cy="6.4" r="1.3" fill="currentColor"/><circle cx="3.9" cy="12" r="1.1" fill="currentColor"/><circle cx="12.6" cy="12" r="1.1" fill="currentColor"/><circle cx="13.6" cy="6.6" r="1.1" fill="currentColor"/></svg>꼴찌'}</div>${mine ? `<div class="sub">제시어: ${wordOrHidden(myWord(mine))}</div>` : ''}</div></div>` : '';
   return `<div class="center"><h1 class="title sm">결과 발표!</h1></div>
     ${meCard}
     <div class="podium">${[1, 0, 2].map(pod).join('')}</div>
@@ -1333,6 +1337,20 @@ function syncWordListeners() {
     r._wl[id] = () => ref.off('value', fn);
   }
 }
+// 다들 타임아웃으로 빠지고 나 혼자 남아 자동으로 1등 처리된 경우, 그 순간 진행자가 '내 제시어'를
+// 읽을 수 없어서(원래 자기 제시어는 자기 자신에게 안 보임) results에 빈 값으로 저장됐을 수 있음.
+// 지금은 내 결과(game/results/내uid)가 이미 생겨서 "게임이 끝난 나"는 규칙상 내 제시어를 읽을 수
+// 있으므로, 한 번만 읽어와서 화면에 보강해 보여줌 (저장된 결과값 자체는 건드리지 않음)
+function revealMyWord(r) {
+  if (!r || !r.meta || r.meta.mode !== 'online' || r._wordRevealFor === r.code) return;
+  const mine = ((r.game && r.game.results) || {})[S.uid];
+  if (!mine || mine.word || r.words[S.uid]) return;
+  r._wordRevealFor = r.code;
+  Api.R(`rooms/${r.code}/words/${S.uid}`).once('value').then(sn => {
+    const w = sn.val();
+    if (w && S.room && S.room.code === r.code) { S.room.words[S.uid] = w; render(); }
+  }).catch(() => {});
+}
 
 /* ---- 화면 배경색(질문 차례 / 답변 차례 / 대기) + 진동, 타이머 글자 ---- */
 function maybeConfetti() { // 결과 화면이 처음 나올 때 한 번만 색종이
@@ -1618,7 +1636,7 @@ function enterRoom(code) {
     else if (key === 'wordHashes') r.hashes = val || {};
     else if (key === 'reports') r.reports = val || {};
     else if (key === 'starting') r.starting = val;
-    if (r.meta) { syncWordListeners(); if (S.screen !== 'room') go('room'); else render(); }
+    if (r.meta) { syncWordListeners(); revealMyWord(r); if (S.screen !== 'room') go('room'); else render(); }
   });
   S.screen = 'room'; render();
 }
