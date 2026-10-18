@@ -308,7 +308,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자(0,
 const CODE_LEN = 6;
 const NICK_MAX = 10;
 const CHAT_MAX = 200;
-const LEGAL_LINKS = '<a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a> · <a href="terms.html" target="_blank" rel="noopener">이용약관</a>';
+const LEGAL_LINKS = '<a href="javascript:void(0)" data-act="showLegal" data-doc="privacy">개인정보처리방침</a> · <a href="javascript:void(0)" data-act="showLegal" data-doc="terms">이용약관</a>';
 const PUBLIC_ROOM_TTL = 3 * 60 * 60 * 1000; // (예전에 만든 방에만 적용) 3시간 지나면 목록에서 숨김
 const ROOM_OFFLINE_MS = 5 * 60 * 1000;      // 방 안에 접속 중인 사람이 아무도 없는 채로 5분이 지나면 방을 정리
 const ROOM_IDLE_MS = 10 * 60 * 1000;        // 접속 중이어도 아무도 10분간 활동하지 않으면 방을 정리
@@ -636,7 +636,7 @@ const S = {
   uid: null, nickname: '', screen: 'boot', myCats: {}, catsReturnTo: 'home',
   form: { nickname: '', joinCode: '', chat: '', av: null, catId: null, catName: '', catWordsText: '',
           create: { mode: 'online', visibility: 'public', chatMode: 'normal', chatLimit: 0, maxPlayers: 6, category: RANDOM_CATEGORY } },
-  avatar: null, avCache: {}, room: null, publicRooms: [], showQR: false, showHelp: false, busy: false, pendingCode: null, leaving: false,
+  avatar: null, avCache: {}, room: null, publicRooms: [], showQR: false, showHelp: false, legalDoc: null, busy: false, pendingCode: null, leaving: false,
   unsubRoom: null, unsubPublic: null, unsubMyCats: null, reportTarget: null
 };
 
@@ -1557,6 +1557,55 @@ function viewQR() {
     <p style="font-weight:900;font-size:22px;letter-spacing:4px;margin:4px 0 10px">${esc(S.room.code)}</p>
     <button class="btn block" data-act="closeQR">닫기</button></div></div>`;
 }
+const LEGAL_CONTENT = {
+  privacy: { title: '개인정보처리방침', body: `<p class="sub">시행일자: 2026년 10월 8일</p>
+    <h3>1. 수집하는 개인정보 항목</h3>
+    <p>제시어게임(이하 "서비스")은 아래 정보만 수집합니다. 이름, 전화번호, 이메일 등 실명 확인이 가능한 개인정보는 수집하지 않습니다.</p>
+    <ul><li><b>기기 식별값(익명 UID)</b> — Firebase 익명 인증을 통해 자동 발급되며, 특정 개인을 식별하지 않습니다.</li>
+    <li><b>닉네임, 캐릭터·색상 선택</b> — 이용자가 직접 입력·선택한 정보입니다.</li>
+    <li><b>게임 중 채팅 메시지</b> — 같은 방 참가자에게만 보이며, 방이 종료되면 함께 삭제됩니다.</li>
+    <li><b>신고 기록</b> — 이용자가 다른 이용자를 신고할 때 신고자 UID, 대상 UID·닉네임, 신고 사유, 신고 당시 메시지 내용이 저장됩니다.</li></ul>
+    <h3>2. 수집 목적</h3>
+    <ul><li>게임 진행 및 같은 방 참가자 식별</li><li>부적절한 이용자 신고 접수 및 제재 처리</li><li>서비스 운영·개선</li></ul>
+    <h3>3. 보관 기간</h3>
+    <ul><li>방 정보·채팅: 참가자가 없거나 활동이 없으면 자동으로 삭제됩니다(최대 10분 이내).</li>
+    <li>프로필(닉네임·캐릭터): 이용자가 앱 내 "계정·데이터 삭제"를 실행하기 전까지 보관됩니다.</li>
+    <li>신고 기록: 운영 목적상 별도로 보관되며, 처리가 완료된 신고는 합리적인 기간 내에 삭제될 수 있습니다.</li></ul>
+    <h3>4. 제3자 제공 및 위탁</h3>
+    <p>서비스는 데이터 저장·인증을 위해 Google의 <b>Firebase</b>를 이용합니다. 이 과정에서 데이터가 Google 서버에 저장될 수 있으며, Firebase의 개인정보 처리는 Google 개인정보처리방침을 따릅니다. 그 외의 목적으로 제3자에게 정보를 제공하지 않습니다.</p>
+    <h3>5. 이용자의 권리</h3>
+    <p>이용자는 앱 내 <b>프로필 수정 → 계정·데이터 삭제</b> 메뉴를 통해 언제든지 자신의 프로필 정보를 삭제할 수 있습니다. 삭제 후에는 복구되지 않습니다.</p>
+    <h3>6. 아동의 개인정보</h3>
+    <p>서비스는 만 14세 미만 아동을 대상으로 하지 않으며, 아동의 개인정보를 의도적으로 수집하지 않습니다.</p>
+    <h3>7. 문의처</h3>
+    <p>개인정보 관련 문의: <a href="mailto:sunho.kim0727@gmail.com">sunho.kim0727@gmail.com</a></p>
+    <p class="sub">본 방침은 서비스 개선에 따라 변경될 수 있으며, 변경 시 본 페이지를 통해 고지합니다.</p>` },
+  terms: { title: '이용약관', body: `<p class="sub">시행일자: 2026년 10월 8일</p>
+    <h3>1. 서비스 소개</h3>
+    <p>제시어게임(이하 "서비스")은 친구·가족과 함께 즐기는 낱말 맞추기 파티 게임입니다. 같은 공간에 모여서, 또는 온라인 채팅으로 함께 플레이할 수 있습니다.</p>
+    <h3>2. 이용자의 의무</h3>
+    <p>이용자는 서비스 이용 중 다음 행위를 해서는 안 됩니다.</p>
+    <ul><li>욕설, 비하, 혐오 표현 등 타인에게 불쾌감을 주는 내용</li>
+    <li>음란물 또는 성적인 내용</li><li>스팸, 광고, 도배성 메시지</li>
+    <li>타인을 사칭하거나 부적절한 닉네임·프로필 사용</li><li>관련 법령을 위반하는 모든 행위</li></ul>
+    <p>위반이 확인되면 사전 통지 없이 경고, 채팅 제한, 강퇴, 서비스 이용 제한 등의 조치를 할 수 있습니다.</p>
+    <h3>3. 신고와 차단</h3>
+    <p>이용자는 앱 내에서 다른 이용자를 <b>신고</b>하거나 <b>차단</b>할 수 있습니다.</p>
+    <ul><li><b>신고</b>: 신고된 내용은 운영자가 확인 후 합리적인 기간 내에 검토하여 필요한 조치를 취합니다.</li>
+    <li><b>차단</b>: 차단한 이용자의 메시지는 내 화면에서 더 이상 보이지 않습니다. 차단은 내 기기에만 적용되며 언제든 해제할 수 있습니다.</li></ul>
+    <h3>4. 서비스 제공 및 변경</h3>
+    <p>서비스는 무료로 제공되며, 운영상·기술상 필요에 따라 사전 고지 없이 내용이 변경되거나 일시 중단될 수 있습니다. 비활성 상태인 방은 자동으로 삭제됩니다.</p>
+    <h3>5. 책임의 한계</h3>
+    <p>서비스는 이용자 간 자유로운 소통을 위한 공간을 제공할 뿐이며, 이용자가 작성한 메시지·닉네임 등의 콘텐츠에 대한 책임은 해당 이용자에게 있습니다. 운영자는 관련 법령이 허용하는 범위에서 책임을 제한합니다.</p>
+    <h3>6. 문의처</h3>
+    <p>이용약관 관련 문의: <a href="mailto:sunho.kim0727@gmail.com">sunho.kim0727@gmail.com</a></p>` }
+};
+function viewLegal() {
+  const d = LEGAL_CONTENT[S.legalDoc]; if (!d) return '';
+  return `<div class="modal" data-act="closeLegal"><div class="box help" data-act="noop"><div class="hb">
+    <h2>${d.title}</h2>${d.body}</div>
+    <div class="hf"><button class="btn primary block" data-act="closeLegal">닫기</button></div></div></div>`;
+}
 
 /* ---- 제시어 글자 크기 자동 맞춤: 칸 안에 딱 들어가는 가장 큰 크기를 찾음 ---- */
 function fitWord() {
@@ -1586,7 +1635,7 @@ function render() {
   };
   const isNewScreen = S.screen !== S._lastScreen; S._lastScreen = S.screen;
   const html = '<div id="viewWrap">' + (views[S.screen] || views.boot)() + '</div>'
-    + (S.showQR && S.room ? viewQR() : '') + (S.showHelp && S.screen === 'home' ? viewHelp() : '') + (S.reportTarget ? viewReport() : '');
+    + (S.showQR && S.room ? viewQR() : '') + (S.showHelp && S.screen === 'home' ? viewHelp() : '') + (S.reportTarget ? viewReport() : '') + (S.legalDoc ? viewLegal() : '');
   // 화면에 실제로 보일 내용이 지난번과 완전히 똑같으면 DOM을 아예 건드리지 않음.
   // 안 그러면 하트비트(10초)/홈 화면 새로고침(30초) 같은 백그라운드 주기 갱신이 아무 것도
   // 바뀐 게 없어도 매번 전체 DOM을 새로 만들어서, 열려 있던 모달(이용방법 등)의 등장 애니메이션이
@@ -1613,7 +1662,7 @@ function render() {
    4. 화면 이동 / 방 입장 흐름
    ===================================================================== */
 function go(screen) {
-  Scanner.close(); S.screen = screen; S.showQR = false; S.showHelp = false;
+  Scanner.close(); S.screen = screen; S.showQR = false; S.showHelp = false; S.legalDoc = null;
   if (screen === 'home') { if (!S.unsubPublic) S.unsubPublic = Api.watchPublic(list => { S.publicRooms = list; sweepPublic(list); if (S.screen === 'home') render(); }); }
   else if (S.unsubPublic) { S.unsubPublic(); S.unsubPublic = null; }
   render(); window.scrollTo(0, 0);
@@ -1947,7 +1996,9 @@ const Actions = {
   showQR() { S.showQR = true; render(); },
   closeQR() { S.showQR = false; render(); },
   showHelp() { S.showHelp = true; render(); },
-  closeHelp() { S.showHelp = false; render(); }
+  closeHelp() { S.showHelp = false; render(); },
+  showLegal(d) { S.legalDoc = d.doc; render(); },
+  closeLegal() { S.legalDoc = null; render(); }
 };
 
 document.addEventListener('click', e => {
@@ -1973,6 +2024,7 @@ document.addEventListener('keydown', e => {
 /* ---- 안드로이드 하드웨어 뒤로가기: 화면 안에서 자연스럽게 뒤로 이동, 홈에서 한 번 더 누르면 종료 ---- */
 let backPressedOnce = false;
 function handleBack() {
+  if (S.legalDoc) { S.legalDoc = null; return render(); }
   if (S.reportTarget) return Actions.closeReport();
   if (S.showQR) { S.showQR = false; return render(); }
   if (S.showHelp) { S.showHelp = false; return render(); }
