@@ -781,10 +781,14 @@ function viewMyCats() {
     <button class="btn small" data-act="backFromMyCats">뒤로</button></div><div class="gap"></div>
   <div class="card"><p class="sub" style="margin:0 0 10px">직접 만든 단어 목록으로 게임할 수 있어요. 비공개방·같은 공간 모드에서만 쓸 수 있어요.</p>
   <button class="btn primary block" data-act="goCatNew">+ 새 카테고리 만들기</button></div>
-  ${cats.length ? cats.map(([id, cat]) => `<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start">
-    <div class="grow"><b>${esc(cat.name)}</b><div class="sub" style="margin-top:2px">단어 ${(cat.words || []).length}개</div></div>
+  ${cats.length ? cats.map(([id, cat]) => {
+    const flagged = hasBadWord(cat.name) || (cat.words || []).some(hasBadWord);
+    return `<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div class="grow"><b>${esc(cat.name)}</b><div class="sub" style="margin-top:2px">단어 ${(cat.words || []).length}개</div>
+    ${flagged ? '<div class="sub" style="color:#D42; font-weight:800; margin-top:4px">⚠ 부적절한 표현이 있어요. 수정해 주세요.</div>' : ''}</div>
     <div class="row" style="gap:6px"><button class="btn small" data-act="goCatEdit" data-id="${id}">수정</button>
-    <button class="btn small danger" data-act="deleteCat" data-id="${id}">삭제</button></div></div></div>`).join('')
+    <button class="btn small danger" data-act="deleteCat" data-id="${id}">삭제</button></div></div></div>`;
+  }).join('')
     : '<div class="empty">🗂️<br>아직 만든 카테고리가 없어요.</div>'}`;
 }
 function viewCatEdit() {
@@ -1027,6 +1031,8 @@ function maskBadWords(text) {
   if (!text) return text;
   return String(text).replace(BAD_WORD_RE, m => '*'.repeat(m.length));
 }
+// 닉네임·카테고리 이름·단어처럼 계속 남아 보이는 값은 가리는 대신 아예 저장을 막기 위한 판별 함수
+function hasBadWord(text) { return !!text && maskBadWords(text) !== text; }
 
 /* =====================================================================
    온라인 모드 게임 (방장 폰이 진행 담당 / 방장이 나가면 다음 방장이 이어받음)
@@ -1826,8 +1832,9 @@ const Scanner = {
 
 const Actions = {
   saveNickname() {
-    const n = maskBadWords(S.form.nickname.trim());
+    const n = S.form.nickname.trim();
     if (!n) return toast('이름을 입력해 주세요.');
+    if (hasBadWord(n)) return toast('이름에 부적절한 표현이 포함되어 있어요. 다른 이름을 입력해 주세요.');
     return run(async () => {
       const av = S.form.av || avatarData(S.uid);
       await Api.saveProfile(S.uid, n, av);
@@ -1940,9 +1947,11 @@ const Actions = {
   backFromCatEdit() { go('myCats'); },
   saveCat() {
     return run(async () => {
-      const name = maskBadWords((S.form.catName || '').trim().slice(0, CAT_NAME_MAX));
+      const name = (S.form.catName || '').trim().slice(0, CAT_NAME_MAX);
       if (!name) throw new Error('카테고리 이름을 입력해 주세요.');
-      const words = parseCustomWords(S.form.catWordsText).map(maskBadWords);
+      if (hasBadWord(name)) throw new Error('카테고리 이름에 부적절한 표현이 포함되어 있어요.');
+      const words = parseCustomWords(S.form.catWordsText);
+      if (words.some(hasBadWord)) throw new Error('단어 목록에 부적절한 표현이 포함되어 있어요. 수정 후 다시 저장해 주세요.');
       if (words.length < CUSTOM_WORDS_MIN) throw new Error(`단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${words.length}개)`);
       const id = S.form.catId || Api.newId();
       await Api.saveCategory(S.uid, id, { name, words, updatedAt: Api.TS() });
