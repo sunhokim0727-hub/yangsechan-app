@@ -1007,6 +1007,27 @@ function blockUser(uid, nickname) {
 function unblockUser(uid) { const list = getBlockList(); delete list[uid]; localStorage.setItem(BLOCK_KEY, JSON.stringify(list)); }
 const REPORT_REASONS = ['욕설·혐오 표현', '성적인 내용', '스팸·광고', '부적절한 닉네임', '기타'];
 
+/* ---- 욕설·noxious한 성적 표현 필터: 닉네임/채팅/커스텀 카테고리에 걸리면 전송을 막지 않고 해당 글자만 *로 가림 ----
+   단어 목록 대조 방식이라 명시적인 욕설·성적 단어는 잘 걸러지지만, 돌려 말하는 표현이나 정치적 발언 등
+   의미를 이해해야 하는 내용은 걸러내지 못함(필터 범위를 넘어서는 부분). */
+const BAD_WORDS = [
+  '씨발', '씨팔', '시발', '시팔', '씨바', '씨불', 'ㅅㅂ', 'ㅆㅂ', '병신', 'ㅂㅅ', '개새끼', '개새기', '개새꺄', '새끼야',
+  '지랄', '지럴', '좆', '좃', '염병', '미친놈', '미친년', '걸레년', '창녀', '니미럴', '니미', '느금마', '느그애미',
+  '애미뒤짐', '애비없는', '꺼지라', 'ㅈㄴ', '존나', '뒤져라', '뒤질래', '씹새끼', '쌍놈', '쌍년',
+  '보지', '자지', '섹스', '성교', '떡치', '자위', '딸딸이', '애널섹스', '야동', '음란물', '보빨', '빠구리',
+  'fuck', 'motherfucker', 'shit', 'bitch', 'pussy', 'dick', 'asshole', 'porn'
+].sort((a, b) => b.length - a.length);
+const BAD_WORD_RE = (() => {
+  const SEP = '[\\s*~\\-_.ㆍ·,!?]*';
+  const esc_ = ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pat = BAD_WORDS.map(w => [...w].map(esc_).join(SEP)).join('|');
+  return new RegExp('(' + pat + ')', 'gi');
+})();
+function maskBadWords(text) {
+  if (!text) return text;
+  return String(text).replace(BAD_WORD_RE, m => '*'.repeat(m.length));
+}
+
 /* =====================================================================
    온라인 모드 게임 (방장 폰이 진행 담당 / 방장이 나가면 다음 방장이 이어받음)
    ===================================================================== */
@@ -1805,7 +1826,7 @@ const Scanner = {
 
 const Actions = {
   saveNickname() {
-    const n = S.form.nickname.trim();
+    const n = maskBadWords(S.form.nickname.trim());
     if (!n) return toast('이름을 입력해 주세요.');
     return run(async () => {
       const av = S.form.av || avatarData(S.uid);
@@ -1878,7 +1899,8 @@ const Actions = {
   unpeek() { S.peek = null; render(); },
   sendGame() {
     const r = S.room; if (!r || r.meta.mode !== 'online') return;
-    const text = (S.form.gchat || '').trim(); if (!text) return;
+    const raw = (S.form.gchat || '').trim(); if (!raw) return;
+    const text = maskBadWords(raw);
     const st = onlineState(r), normal = r.meta.chatMode === 'normal';
     let kind;
     if (S.guessMode) { if (!st.canGuess) return toast('지금은 정답을 시도할 수 없어요.'); kind = 'guess'; }
@@ -1918,9 +1940,9 @@ const Actions = {
   backFromCatEdit() { go('myCats'); },
   saveCat() {
     return run(async () => {
-      const name = (S.form.catName || '').trim().slice(0, CAT_NAME_MAX);
+      const name = maskBadWords((S.form.catName || '').trim().slice(0, CAT_NAME_MAX));
       if (!name) throw new Error('카테고리 이름을 입력해 주세요.');
-      const words = parseCustomWords(S.form.catWordsText);
+      const words = parseCustomWords(S.form.catWordsText).map(maskBadWords);
       if (words.length < CUSTOM_WORDS_MIN) throw new Error(`단어를 최소 ${CUSTOM_WORDS_MIN}개 입력해 주세요. (현재 ${words.length}개)`);
       const id = S.form.catId || Api.newId();
       await Api.saveCategory(S.uid, id, { name, words, updatedAt: Api.TS() });
@@ -1953,7 +1975,8 @@ const Actions = {
       .catch(() => toast('신고 접수에 실패했어요. 다시 시도해 주세요.'));
   },
   sendChat() {
-    const text = S.form.chat.trim(); if (!text) return;
+    const raw = S.form.chat.trim(); if (!raw) return;
+    const text = maskBadWords(raw);
     S.form.chat = '';
     Api.sendChat(S.room.code, S.uid, S.nickname, text.slice(0, CHAT_MAX)).catch(() => toast('메시지를 보내지 못했어요.'));
     render(); const i = document.getElementById('chatInput'); if (i) i.focus();
