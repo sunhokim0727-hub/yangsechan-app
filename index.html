@@ -1042,13 +1042,41 @@ function onlineState(r) {
 }
 
 /* ---- 방장 폰이 하는 진행: 질문→답변 단계 전환, 정답 판정, 시간 초과, 다음 차례 ---- */
+// 온라인 모드 게임 중 자동 퇴장 관련 값 (방장이 매번 직접 강퇴하지 않아도 되도록)
+const CONN_LOST_EXIT_MS = 20000; // 소켓 연결 자체가 끊긴(onDisconnect) 사람을 이 시간 뒤 게임에서 자동으로 빼고 꼴찌 처리
+const AFK_TURN_MIN_MS = 150000; // 연결은 붙어있지만(화면이 꺼졌거나 홈버튼으로 방치) 본인 차례에서 이만큼 반응이 없으면 자동으로 뺌 - 기본 2분 30초
+// 방장이 입력 제한시간을 더 길게(최대 3분) 설정해둔 방에서는, 그 설정보다 먼저 쫓겨나는 일이 없도록
+// '방장이 정한 제한시간 + 1분'과 AFK_TURN_MIN_MS 중 더 큰 값을 씀 (제한시간이 '무제한'인 방에서 주로 의미가 있음 -
+// 제한시간이 정해진 방은 보통 그 시간이 지나면 먼저 '차례 넘김'이 일어나서, 실제로는 이 값까지 가지 않음)
+function afkTurnKickMs(r) { return Math.max(AFK_TURN_MIN_MS, (r.meta.chatLimit || 0) * 1000 + 60000); }
+
 async function driveOnline() {
   const r = S.room;
   if (!r || !r.meta || r.meta.mode !== 'online' || r.meta.status !== 'playing' || driverId(r) !== S.uid) return;
   const g = r.game; if (!g || !g.startedAt || g.ended || S.driving) return;
-  if (S._gid == null || Math.abs(S._gid - g.startedAt) > 2000) { S._gid = g.startedAt; S.judged = {}; S.warned = {}; S.advancedFor = -1; }
+  if (S._gid == null || Math.abs(S._gid - g.startedAt) > 2000) { S._gid = g.startedAt; S.judged = {}; S.warned = {}; S.advancedFor = -1; S._offSince = {}; }
   S.driving = true;
-  try { await driveStep(r, g); } catch (e) { console.error(e); S.advancedFor = -1; } finally { S.driving = false; }
+  try { await driveDisconnected(r, g); await driveStep(r, g); } catch (e) { console.error(e); S.advancedFor = -1; } finally { S.driving = false; }
+}
+// 연결 자체가 끊긴(소켓 disconnect, onDisconnect로 online:false가 된) 사람을 일정 시간 뒤 자동으로 빼고 꼴찌 처리
+// (화면이 꺼졌거나 홈버튼으로 백그라운드에 가 있는 것만으로는 보통 바로 끊기지 않고, 앱을 완전히 끄거나
+//  네트워크가 정말 끊겼을 때 online:false가 됨 - 아래 AFK 타임아웃과 달리 '본인 차례'가 아니어도 적용됨)
+async function driveDisconnected(r, g) {
+  const code = r.code, now = Date.now(), up = {};
+  S._offSince = S._offSince || {};
+  for (const id of aliveIds(r)) {
+    const p = r.players[id];
+    if (p && p.online === false) {
+      if (!S._offSince[id]) { S._offSince[id] = now; continue; }
+      if (now - S._offSince[id] > CONN_LOST_EXIT_MS) {
+        up[`rooms/${code}/game/left/${id}`] = { nickname: p.nickname || '', at: Api.TS() };
+        up[`rooms/${code}/chat/dc_${id}_${now}`] = { uid: 'sys', nickname: '', kind: 'sys', text: `📴 ${p.nickname || '플레이어'}님이 연결이 끊겨 자동으로 게임에서 빠졌어요`, ts: Api.TS() };
+      }
+    } else {
+      delete S._offSince[id];
+    }
+  }
+  if (Object.keys(up).length) await Api.db.ref().update(up);
 }
 async function driveStep(r, g) {
   const code = r.code, chat = r.chat || [], normal = r.meta.chatMode === 'normal';
@@ -1084,14 +1112,37 @@ async function driveStep(r, g) {
       await Api.R(`rooms/${code}/game/turn`).set({ n: t.n, qid: t.qid, phase: 'answer', at: Api.TS(), qMsg: q.id, need: alive.filter(id => id !== t.qid) });
       return;
     }
+    // 연결은 붙어있지만(홈버튼 등으로 방치) 질문자가 너무 오래 반응이 없으면 자동으로 뺌
+    // (제한시간이 정해진 방은 보통 아래 '차례 넘김'이 먼저 일어나서, 실제로는 '무제한' 방에서 주로 발동함)
+    if (elapsed > afkTurnKickMs(r)) {
+      S.advancedFor = t.n;
+      const nm = (r.players[t.qid] || {}).nickname || '';
+      await Api.db.ref().update({
+        [`rooms/${code}/game/left/${t.qid}`]: { nickname: nm, at: Api.TS() },
+        [`rooms/${code}/chat/afk_${t.qid}_${t.n}`]: { uid: 'sys', nickname: '', kind: 'sys', text: `⏰ ${nm || '플레이어'}님이 오래 반응이 없어서 자동으로 게임에서 빠졌어요`, turn: t.n, ts: Api.TS() }
+      });
+      return;
+    }
     if (limit && elapsed > limit * 1000) { S.advancedFor = t.n; return advanceTurn(r, g, alive, `⏰ ${nameOf(r, t.qid)}님이 시간 안에 질문하지 못해 차례가 넘어갔어요`); }
     return;
   }
-  // 3) 답변 단계: 모두 답했으면 다음 차례, 시간이 지났으면 미답변자 경고
+  // 3) 답변 단계: 모두 답했으면 다음 차례, 시간이 지났으면 미답변자 경고, 너무 오래 방치하면 자동 퇴장
   const need = (t.need || []).filter(id => alive.includes(id));
   const done = id => chat.some(m => m.turn === t.n && m.uid === id && m.kind === 'a') || chat.some(m => m.turn === t.n && m.kind === 'sys' && m.warnTarget === id);
   const pending = need.filter(id => !done(id));
   if (pending.length === 0) { S.advancedFor = t.n; return advanceTurn(r, g, alive, ''); }
+  const afkMs = afkTurnKickMs(r);
+  const afkIds = pending.filter(id => elapsed > afkMs);
+  if (afkIds.length) {
+    const up = {};
+    for (const id of afkIds) {
+      const nm = (r.players[id] || {}).nickname || '';
+      up[`rooms/${code}/game/left/${id}`] = { nickname: nm, at: Api.TS() };
+      up[`rooms/${code}/chat/afk_${id}_${t.n}`] = { uid: 'sys', nickname: '', kind: 'sys', text: `⏰ ${nm || '플레이어'}님이 오래 반응이 없어서 자동으로 게임에서 빠졌어요`, turn: t.n, ts: Api.TS() };
+    }
+    await Api.db.ref().update(up);
+    return;
+  }
   if (limit && elapsed > limit * 1000) {
     const up = {};
     for (const id of pending) {
